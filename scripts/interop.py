@@ -18,6 +18,7 @@ from bacpypes3.apdu import (
     UnconfirmedCOVNotificationRequest, WhoIsRequest, IAmRequest,
 )
 from bacpypes3.basetypes import ReadAccessSpecification, PropertyReference, PropertyValue
+from bacpypes3.constructeddata import ArrayOf
 from bacpypes3.primitivedata import (
     Null, Boolean, Unsigned, Integer, Real, Double, OctetString,
     CharacterString, BitString, Enumerated, Date, Time, ObjectIdentifier, TagList,
@@ -77,6 +78,7 @@ queries = [
     ("cov-sub",SubscribeCOVRequest(subscriberProcessIdentifier=5,monitoredObjectIdentifier=("analogInput",1),issueConfirmedNotifications=False,lifetime=0)),
     ("cov-sub",SubscribeCOVRequest(subscriberProcessIdentifier=5,monitoredObjectIdentifier=("analogInput",1))),
     ("cov",UnconfirmedCOVNotificationRequest(subscriberProcessIdentifier=5,initiatingDeviceIdentifier=("device",42),monitoredObjectIdentifier=("analogInput",1),timeRemaining=15,listOfValues=[PropertyValue(propertyIdentifier="presentValue",value=Real(23.0)),PropertyValue(propertyIdentifier="statusFlags",value=BitString([0,0,0,0]))])),
+    ("rp-ack",ReadPropertyACK(objectIdentifier=("device",42),propertyIdentifier=512,propertyValue=ArrayOf(Unsigned)([]))),
 ]
 for mode,q in queries:
     header(q)

@@ -1,0 +1,48 @@
+name: check-build-test
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install official MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Strict compiler build tests format and interfaces
+        run: |
+          moon version --all
+          moon check --target all --deny-warn
+          moon build --target all --deny-warn
+          moon test --target all --deny-warn
+          moon fmt --check
+          moon info
+          git diff --exit-code
+      - name: Application scenarios and bounded sustained workload
+        run: |
+          moon run examples/hvac --target native --deny-warn
+          moon run examples/energy --target native --deny-warn
+          moon run examples/monitoring --target js --deny-warn
+          moon run examples/scale --target native --deny-warn
+      - name: Independent BACpypes3 typed codecs and persistent device exchange
+        run: |
+          python -m pip install --target _local/oracle -r scripts/requirements-interop.txt
+          python scripts/interop.py
+      - name: Local packaging and source hygiene
+        run: |
+          moon package
+          python scripts/verify_repository.py
