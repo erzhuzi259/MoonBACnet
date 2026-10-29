@@ -1,0 +1,2 @@
+import { "local/moonbacnet" @bac, "local/moonbacnet/examples/support", }
+pkgtype(kind: "executable")
