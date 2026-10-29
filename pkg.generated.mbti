@@ -1,0 +1,383 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "local/moonbacnet"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn decode_apdu(Bytes, limits? : Limits) -> Apdu raise BacnetError
+
+pub fn decode_bvlc(Bytes, limits? : Limits) -> Bvlc raise BacnetError
+
+pub fn decode_cov(Bytes, limits? : Limits) -> CovNotification raise BacnetError
+
+pub fn decode_datagram(Bytes, limits? : Limits) -> Apdu raise BacnetError
+
+pub fn decode_error(Bytes) -> (UInt32, UInt32) raise BacnetError
+
+pub fn decode_i_am(Bytes, limits? : Limits) -> IAm raise BacnetError
+
+pub fn decode_multiple_ack(Bytes, limits? : Limits) -> Array[ReadAccessResult] raise BacnetError
+
+pub fn decode_npdu(Bytes, limits? : Limits) -> Npdu raise BacnetError
+
+pub fn decode_property_ack(Bytes, limits? : Limits) -> PropertyValue raise BacnetError
+
+pub fn decode_read_multiple(Bytes, limits? : Limits) -> Array[ReadAccess] raise BacnetError
+
+pub fn decode_read_property(Bytes, limits? : Limits) -> PropertyRef raise BacnetError
+
+pub fn decode_subscribe_cov(Bytes, limits? : Limits) -> SubscribeCov raise BacnetError
+
+pub fn decode_tags(Bytes, limits? : Limits) -> Array[Tag] raise BacnetError
+
+pub fn decode_who_is(Bytes, limits? : Limits) -> WhoIs raise BacnetError
+
+pub fn decode_write_property(Bytes, limits? : Limits) -> WriteProperty raise BacnetError
+
+pub fn encode_apdu(Apdu, limits? : Limits) -> Bytes raise BacnetError
+
+pub fn encode_bvlc(Bvlc, limits? : Limits) -> Bytes raise BacnetError
+
+pub fn encode_cov(CovNotification, limits? : Limits) -> Bytes raise BacnetError
+
+pub fn encode_datagram(Apdu, broadcast? : Bool, limits? : Limits) -> Bytes raise BacnetError
+
+pub fn encode_error(UInt32, UInt32) -> Bytes raise BacnetError
+
+pub fn encode_i_am(IAm, limits? : Limits) -> Bytes raise BacnetError
+
+pub fn encode_multiple_ack(Array[ReadAccessResult], limits? : Limits) -> Bytes raise BacnetError
+
+pub fn encode_npdu(Npdu, limits? : Limits) -> Bytes raise BacnetError
+
+pub fn encode_property_ack(PropertyValue, limits? : Limits) -> Bytes raise BacnetError
+
+pub fn encode_read_multiple(Array[ReadAccess], limits? : Limits) -> Bytes raise BacnetError
+
+pub fn encode_read_property(PropertyRef, limits? : Limits) -> Bytes raise BacnetError
+
+pub fn encode_subscribe_cov(SubscribeCov, limits? : Limits) -> Bytes raise BacnetError
+
+pub fn encode_tags(Array[Tag], limits? : Limits) -> Bytes raise BacnetError
+
+pub fn encode_who_is(WhoIs, limits? : Limits) -> Bytes raise BacnetError
+
+pub fn encode_write_property(WriteProperty, limits? : Limits) -> Bytes raise BacnetError
+
+pub fn hex_decode(String, limits? : Limits) -> Bytes raise BacnetError
+
+pub fn hex_encode(Bytes) -> String
+
+pub fn max_apdu_size(Int32) -> Int32 raise BacnetError
+
+// Errors
+pub suberror BacnetError {
+  Invalid(String, Int32)
+  Unsupported(String)
+  Limit(String)
+  State(String)
+  Property(UInt32, UInt32)
+} derive(@debug.Debug)
+pub fn BacnetError::to_repr(Self) -> @debug.Repr
+
+// Types and methods
+pub(all) enum Apdu {
+  Confirmed(Request)
+  Unconfirmed(Int32, Bytes)
+  SimpleAck(Int32, Int32)
+  ComplexAck(Int32, Int32, Bytes)
+  ErrorPdu(Int32, Int32, Bytes)
+  Reject(Int32, Int32)
+  Abort(Int32, Bool, Int32)
+} derive(@debug.Debug)
+pub fn Apdu::to_repr(Self) -> @debug.Repr
+
+pub(all) enum Bvlc {
+  ResultCode(Int32)
+  RegisterForeign(Int32)
+  OriginalUnicast(Bytes)
+  OriginalBroadcast(Bytes)
+  Forwarded(Bytes, Bytes)
+  DistributeBroadcast(Bytes)
+} derive(@debug.Debug)
+pub fn Bvlc::to_repr(Self) -> @debug.Repr
+
+pub struct Client {
+  // private fields
+}
+pub fn Client::cancel(Self, String, Int32) -> Bool raise BacnetError
+pub fn Client::new(timeout? : UInt64, retries? : Int32, limits? : Limits) -> Self raise BacnetError
+pub fn Client::pending_count(Self) -> Int32
+pub fn Client::poll(Self, UInt64) -> Array[ClientEvent] raise BacnetError
+pub fn Client::receive(Self, String, Apdu, UInt64) -> Completion? raise BacnetError
+pub fn Client::start(Self, String, Int32, Bytes, UInt64, max_apdu? : Int32) -> Transmission raise BacnetError
+
+pub(all) enum ClientEvent {
+  Retry(Transmission)
+  TimedOut(String, Int32)
+} derive(@debug.Debug)
+pub fn ClientEvent::to_repr(Self) -> @debug.Repr
+
+pub(all) enum CommandDomain {
+  Analog
+  Binary
+  MultiState(UInt32)
+} derive(@debug.Debug)
+pub fn CommandDomain::to_repr(Self) -> @debug.Repr
+
+pub(all) enum Completion {
+  Completed(Apdu)
+  ServiceError(UInt32, UInt32)
+  Rejected(Int32)
+  Aborted(Bool, Int32)
+} derive(@debug.Debug)
+pub fn Completion::to_repr(Self) -> @debug.Repr
+
+pub(all) struct CovEnvelope {
+  peer : String
+  notification : CovNotification
+} derive(@debug.Debug)
+pub fn CovEnvelope::to_repr(Self) -> @debug.Repr
+
+pub struct CovManager {
+  // private fields
+}
+pub fn CovManager::count(Self, UInt64) -> Int32 raise BacnetError
+pub fn CovManager::new(Device) -> Self
+pub fn CovManager::poll(Self, UInt64) -> Array[CovEnvelope] raise BacnetError
+pub fn CovManager::subscribe(Self, String, SubscribeCov, UInt64) -> Unit raise BacnetError
+
+pub(all) struct CovNotification {
+  process : UInt32
+  device : ObjectId
+  object : ObjectId
+  remaining : UInt32
+  values : Array[CovProperty]
+} derive(@debug.Debug)
+pub fn CovNotification::to_repr(Self) -> @debug.Repr
+
+pub(all) struct CovProperty {
+  property : UInt32
+  index : UInt32?
+  value : Array[Tag]
+  priority : Int32?
+} derive(@debug.Debug)
+pub fn CovProperty::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Date {
+  year : Int32
+  month : Int32
+  day : Int32
+  weekday : Int32
+} derive(Eq, @debug.Debug)
+pub fn Date::equal(Self, Self) -> Bool
+pub fn Date::not_equal(Self, Self) -> Bool
+pub fn Date::to_repr(Self) -> @debug.Repr
+
+pub struct Device {
+  // private fields
+}
+pub fn Device::active_priority(Self, ObjectId) -> Int32? raise BacnetError
+pub fn Device::add_object(Self, ObjectId, String) -> Unit raise BacnetError
+pub fn Device::add_point(Self, ObjectId, String, CommandDomain, Value, commandable? : Bool, units? : UInt32) -> Unit raise BacnetError
+pub fn Device::all_property_ids(Self, ObjectId) -> Array[UInt32] raise BacnetError
+pub fn Device::announcement(Self) -> IAm
+pub fn Device::define_property(Self, ObjectId, UInt32, Array[Tag], writable? : Bool, array? : Bool) -> Unit raise BacnetError
+pub fn Device::identifier(Self) -> ObjectId
+pub fn Device::new(Int32, String, UInt32, limits? : Limits) -> Self raise BacnetError
+pub fn Device::property_ids(Self, ObjectId) -> Array[UInt32] raise BacnetError
+pub fn Device::read(Self, PropertyRef) -> Array[Tag] raise BacnetError
+pub fn Device::resource_limits(Self) -> Limits
+pub fn Device::set_relinquish_default(Self, ObjectId, Value) -> Unit raise BacnetError
+pub fn Device::update(Self, ObjectId, UInt32, Value) -> Unit raise BacnetError
+pub fn Device::write(Self, WriteProperty) -> Unit raise BacnetError
+
+pub(all) struct IAm {
+  device : ObjectId
+  max_apdu : UInt32
+  segmentation : UInt32
+  vendor : UInt32
+} derive(@debug.Debug)
+pub fn IAm::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Limits {
+  max_bytes : Int32
+  max_nodes : Int32
+  max_depth : Int32
+  max_objects : Int32
+  max_properties : Int32
+  max_subscriptions : Int32
+  max_pending : Int32
+} derive(Eq, @debug.Debug)
+pub fn Limits::default() -> Self
+pub fn Limits::equal(Self, Self) -> Bool
+pub fn Limits::not_equal(Self, Self) -> Bool
+pub fn Limits::to_repr(Self) -> @debug.Repr
+pub fn Limits::validate(Self) -> Unit raise BacnetError
+
+pub(all) struct Npdu {
+  destination : Route?
+  source : Route?
+  hop_count : Int32
+  expecting_reply : Bool
+  priority : Int32
+  payload : Bytes
+} derive(@debug.Debug)
+pub fn Npdu::for_local(Bytes, expecting_reply? : Bool) -> Self
+pub fn Npdu::to_repr(Self) -> @debug.Repr
+
+pub struct ObjectId {
+  kind : Int32
+  instance : Int32
+} derive(Compare, Eq, Hash, @debug.Debug)
+pub fn ObjectId::compare(Self, Self) -> Int32
+pub fn ObjectId::equal(Self, Self) -> Bool
+pub fn ObjectId::from_number(UInt32) -> Self
+pub fn ObjectId::hash(Self) -> Int32
+pub fn ObjectId::hash_combine(Self, Hasher) -> Unit
+pub fn ObjectId::new(Int32, Int32) -> Self raise BacnetError
+pub fn ObjectId::not_equal(Self, Self) -> Bool
+pub fn ObjectId::number(Self) -> UInt32
+pub fn ObjectId::op_ge(Self, Self) -> Bool
+pub fn ObjectId::op_gt(Self, Self) -> Bool
+pub fn ObjectId::op_le(Self, Self) -> Bool
+pub fn ObjectId::op_lt(Self, Self) -> Bool
+pub fn ObjectId::to_repr(Self) -> @debug.Repr
+
+pub struct PriorityArray {
+  // private fields
+}
+pub fn PriorityArray::active_priority(Self) -> Int32?
+pub fn PriorityArray::default_value(Self) -> Value
+pub fn PriorityArray::effective(Self) -> Value
+pub fn PriorityArray::new(CommandDomain, Value) -> Self raise BacnetError
+pub fn PriorityArray::set_default(Self, Value) -> Unit raise BacnetError
+pub fn PriorityArray::values(Self) -> Array[Tag]
+pub fn PriorityArray::write(Self, Int32, Value) -> Unit raise BacnetError
+
+pub(all) struct PropertyRef {
+  object : ObjectId
+  property : UInt32
+  index : UInt32?
+} derive(Eq, @debug.Debug)
+pub fn PropertyRef::equal(Self, Self) -> Bool
+pub fn PropertyRef::not_equal(Self, Self) -> Bool
+pub fn PropertyRef::to_repr(Self) -> @debug.Repr
+
+pub(all) struct PropertyValue {
+  reference : PropertyRef
+  value : Array[Tag]
+} derive(@debug.Debug)
+pub fn PropertyValue::to_repr(Self) -> @debug.Repr
+
+pub(all) struct ReadAccess {
+  object : ObjectId
+  properties : Array[(UInt32, UInt32?)]
+} derive(@debug.Debug)
+pub fn ReadAccess::to_repr(Self) -> @debug.Repr
+
+pub(all) struct ReadAccessResult {
+  object : ObjectId
+  results : Array[ReadResult]
+} derive(@debug.Debug)
+pub fn ReadAccessResult::to_repr(Self) -> @debug.Repr
+
+pub(all) enum ReadResult {
+  PropertyData(PropertyRef, Array[Tag])
+  PropertyFailure(PropertyRef, UInt32, UInt32)
+} derive(@debug.Debug)
+pub fn ReadResult::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Request {
+  invoke : Int32
+  service : Int32
+  max_apdu : Int32
+  max_segments : Int32
+  segmented_response_accepted : Bool
+  body : Bytes
+} derive(@debug.Debug)
+pub fn Request::new(Int32, Int32, Bytes, max_apdu? : Int32) -> Self raise BacnetError
+pub fn Request::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Route {
+  network : Int32
+  address : Bytes
+} derive(@debug.Debug)
+pub fn Route::to_repr(Self) -> @debug.Repr
+
+pub struct Server {
+  // private fields
+}
+pub fn Server::datagram(Self, Bytes, String, UInt64) -> Bytes? raise BacnetError
+pub fn Server::device(Self) -> Device
+pub fn Server::handle(Self, Apdu, String, UInt64) -> Apdu? raise BacnetError
+pub fn Server::new(Device) -> Self
+pub fn Server::notifications(Self, UInt64) -> Array[CovEnvelope] raise BacnetError
+
+pub(all) struct SubscribeCov {
+  process : UInt32
+  object : ObjectId
+  confirmed : Bool?
+  lifetime : UInt32?
+} derive(@debug.Debug)
+pub fn SubscribeCov::to_repr(Self) -> @debug.Repr
+
+pub(all) enum Tag {
+  Application(Value)
+  Context(Int32, Bytes)
+  Constructed(Int32, Array[Tag])
+} derive(@debug.Debug)
+pub fn Tag::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Time {
+  hour : Int32
+  minute : Int32
+  second : Int32
+  hundredth : Int32
+} derive(Eq, @debug.Debug)
+pub fn Time::equal(Self, Self) -> Bool
+pub fn Time::not_equal(Self, Self) -> Bool
+pub fn Time::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Transmission {
+  peer : String
+  invoke : Int32
+  bytes : Bytes
+} derive(@debug.Debug)
+pub fn Transmission::to_repr(Self) -> @debug.Repr
+
+pub(all) enum Value {
+  Null
+  Boolean(Bool)
+  Unsigned(UInt32)
+  Signed(Int32)
+  Real(Float)
+  DoubleValue(Double)
+  Octets(Bytes)
+  Text(String)
+  Bits(Int32, Bytes)
+  Enumerated(UInt32)
+  DateValue(Date)
+  TimeValue(Time)
+  Object(ObjectId)
+} derive(@debug.Debug)
+pub fn Value::to_repr(Self) -> @debug.Repr
+
+pub(all) struct WhoIs {
+  low : Int32?
+  high : Int32?
+} derive(@debug.Debug)
+pub fn WhoIs::to_repr(Self) -> @debug.Repr
+
+pub(all) struct WriteProperty {
+  reference : PropertyRef
+  value : Array[Tag]
+  priority : Int32?
+} derive(@debug.Debug)
+pub fn WriteProperty::to_repr(Self) -> @debug.Repr
+
+// Type aliases
+
+// Traits

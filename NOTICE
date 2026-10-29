@@ -1,0 +1,9 @@
+MoonBACnet
+Copyright 2026 MoonBACnet contributors
+
+Independent bounded protocol/application implementation. BACnet and referenced
+project names identify interoperability targets and do not imply endorsement,
+BTL certification, membership or compliance certification.
+
+Shared Windows tool adapters originate from the local Apache-2.0 MoonEXR and
+MoonAMQP1 development tooling. See THIRD_PARTY.md for source/dependency scope.

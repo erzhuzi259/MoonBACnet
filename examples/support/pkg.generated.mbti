@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "local/moonbacnet/examples/support"
+
+import {
+  "local/moonbacnet",
+}
+
+// Values
+pub fn assert_real(Array[@moonbacnet.Tag], Float) -> Unit raise
+
+pub fn read(@moonbacnet.Server, @moonbacnet.Client, @moonbacnet.PropertyRef, UInt64) -> Array[@moonbacnet.Tag] raise
+
+pub fn transact(@moonbacnet.Server, @moonbacnet.Client, Int32, Bytes, UInt64) -> @moonbacnet.Completion raise
+
+pub fn write(@moonbacnet.Server, @moonbacnet.Client, @moonbacnet.ObjectId, @moonbacnet.Value, Int32, UInt64) -> Unit raise
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
