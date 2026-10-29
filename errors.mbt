@@ -35,3 +35,9 @@ pub fn Limits::validate(self : Limits) -> Unit raise BacnetError {
 fn require_range(value : Int, low : Int, high : Int, name : String) -> Unit raise BacnetError {
   if value < low || value > high { raise Invalid(name, 0) }
 }
+
+pub extend BacnetError with @debug.Debug::{to_repr}
+
+pub extend Limits with @debug.Debug::{to_repr}
+
+pub extend Limits with Eq::{equal, not_equal}

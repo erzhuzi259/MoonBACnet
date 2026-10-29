@@ -51,7 +51,7 @@ fn Writer::u8(self : Writer, value : Int) -> Unit raise BacnetError {
 
 fn Writer::uint(self : Writer, value : UInt, n : Int) -> Unit raise BacnetError {
   for i = n - 1; i >= 0; i = i - 1 {
-    self.u8(((value >> (i*8)) & 255U).to_int())
+    self.u8(((value >> (i*8)) & 255U).reinterpret_as_int())
   }
 }
 

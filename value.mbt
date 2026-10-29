@@ -14,7 +14,7 @@ pub fn ObjectId::number(self : ObjectId) -> UInt {
 }
 
 pub fn ObjectId::from_number(value : UInt) -> ObjectId {
-  { kind: (value >> 22).to_int(), instance: (value & 4194303U).to_int() }
+  { kind: (value >> 22).reinterpret_as_int(), instance: (value & 4194303U).reinterpret_as_int() }
 }
 
 pub(all) struct Date {
@@ -73,3 +73,23 @@ fn bits_valid(unused : Int, data : Bytes) -> Bool {
   let mask = (1 << unused) - 1
   (data[data.length()-1].to_int() & mask) == 0
 }
+
+pub extend ObjectId with @debug.Debug::{to_repr}
+
+pub extend ObjectId with Eq::{equal, not_equal}
+
+pub extend ObjectId with Compare::{compare}
+
+pub extend ObjectId with Hash::{hash}
+
+pub extend Date with @debug.Debug::{to_repr}
+
+pub extend Date with Eq::{equal, not_equal}
+
+pub extend Time with @debug.Debug::{to_repr}
+
+pub extend Time with Eq::{equal, not_equal}
+
+pub extend Value with @debug.Debug::{to_repr}
+
+pub extend Tag with @debug.Debug::{to_repr}
