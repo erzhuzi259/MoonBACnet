@@ -3,6 +3,7 @@ pub suberror BacnetError {
   Unsupported(String)
   Limit(String)
   State(String)
+  Property(UInt, UInt)
 } derive(Debug)
 
 pub(all) struct Limits {
