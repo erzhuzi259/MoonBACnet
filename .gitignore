@@ -1,0 +1,11 @@
+/_local/
+/_build/
+/.mooncakes/
+__pycache__/
+*.pyc
+*.zip
+*申报书*
+*审查报告*
+*自查报告*
+*辅助报告*
+*汇总报告*
