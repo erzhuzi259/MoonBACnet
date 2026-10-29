@@ -82,12 +82,7 @@ pub fn encode_multiple_ack(
     let children : Array[Tag] = []
     for result in entry.results {
       let (reference, choice) = match result {
-        PropertyData(reference, value) => {
-          if value.is_empty() {
-            raise Invalid("empty access value", 0)
-          }
-          (reference, Constructed(4, value))
-        }
+        PropertyData(reference, value) => (reference, Constructed(4, value))
         PropertyFailure(reference, class, code) =>
           (
             reference,
@@ -131,12 +126,7 @@ pub fn decode_multiple_ack(
       let index = children.optional_uint(3)
       let reference : PropertyRef = { object, property, index, }
       match children.next() {
-        Constructed(4, value) => {
-          if value.is_empty() {
-            raise Invalid("empty access value", children.pos)
-          }
-          results.push(PropertyData(reference, value))
-        }
+        Constructed(4, value) => results.push(PropertyData(reference, value))
         Constructed(5, error) =>
           match error[:] {
             [Application(Enumerated(class)), Application(Enumerated(code))] =>

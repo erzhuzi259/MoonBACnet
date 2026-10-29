@@ -35,7 +35,7 @@ pub struct Client {
   priv retry_limit : Int32
   priv pending : Array[PendingRequest]
   priv mut retained : Int32
-  priv mut next_invoke : Int
+  priv mut next_invoke : Int32
   priv mut now : UInt64
 }
 
@@ -49,7 +49,15 @@ pub fn Client::new(
   if timeout == 0UL || retries < 0 || retries > 16 {
     raise Invalid("client timing policy", 0)
   }
-  { limits, timeout, retry_limit: retries, pending: [], retained: 0, now: 0UL, next_invoke: 0, }
+  {
+    limits,
+    timeout,
+    retry_limit: retries,
+    pending: [],
+    retained: 0,
+    now: 0UL,
+    next_invoke: 0,
+  }
 }
 
 ///|
@@ -93,7 +101,7 @@ pub fn Client::start(
     if !used {
       break
     }
-    invoke = (invoke+1)%256
+    invoke = (invoke + 1) % 256
     examined += 1
   }
   if examined == 256 {
@@ -116,7 +124,7 @@ pub fn Client::start(
     retries: 0,
   })
   self.retained += cost
-  self.next_invoke = (invoke+1)%256
+  self.next_invoke = (invoke + 1) % 256
   { peer, invoke, bytes, }
 }
 
@@ -248,4 +256,3 @@ pub extend Completion with @debug.Debug::{to_repr}
 
 ///|
 pub extend ClientEvent with @debug.Debug::{to_repr}
-

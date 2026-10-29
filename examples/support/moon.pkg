@@ -1,1 +1,3 @@
-import { "local/moonbacnet" @bac, }
+import {
+  "local/moonbacnet" @bac,
+}

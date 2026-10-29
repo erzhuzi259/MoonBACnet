@@ -4,12 +4,12 @@ pub struct Server {
   priv cov : CovManager
   priv cache : Array[CachedReply]
   priv mut now : UInt64
-  priv mut cache_bytes : Int
+  priv mut cache_bytes : Int32
 }
 
 ///|
 pub fn Server::new(device : Device) -> Server {
-  { device, cov: CovManager::new(device), cache: [], now: 0UL, cache_bytes: 0 }
+  { device, cov: CovManager::new(device), cache: [], now: 0UL, cache_bytes: 0, }
 }
 
 ///|
@@ -136,13 +136,19 @@ pub fn Server::handle(
   }
   match apdu {
     Confirmed(request) => {
-      if peer.is_empty() { raise Invalid("empty request peer",0) }
-      let peer_bytes = text_bytes(peer,256).length()
+      if peer.is_empty() {
+        raise Invalid("empty request peer", 0)
+      }
+      let peer_bytes = text_bytes(peer, 256).length()
       for i = 0; i < self.cache.length(); i = i + 1 {
         let cached = self.cache[i]
         if cached.peer == peer && cached.invoke == request.invoke {
-          if cached.request == request_wire { return Some(decode_apdu(cached.response,limits=self.device.limits)) }
-          self.cache_bytes -= cached.request.length()+cached.response.length()+text_bytes(cached.peer,256).length()
+          if cached.request == request_wire {
+            return Some(decode_apdu(cached.response, limits=self.device.limits))
+          }
+          self.cache_bytes -= cached.request.length() +
+            cached.response.length() +
+            text_bytes(cached.peer, 256).length()
           self.cache.remove(i) |> ignore
           break
         }
@@ -155,23 +161,39 @@ pub fn Server::handle(
         Limit(_) => Abort(request.invoke, true, 1)
         error => raise error
       }
-      let response_wire = try encode_apdu(response, limits=self.device.limits) catch {
-        Limit(_) => encode_apdu(Abort(request.invoke,true,1),limits=self.device.limits)
+      let response_wire = encode_apdu(response, limits=self.device.limits) catch {
+        Limit(_) =>
+          encode_apdu(Abort(request.invoke, true, 1), limits=self.device.limits)
         error => raise error
       }
-      let response_wire = if response_wire.length() > max_apdu_size(request.max_apdu) {
-        encode_apdu(Abort(request.invoke,true,11),limits=self.device.limits)
-      } else { response_wire }
-      let cost = request_wire.length()+response_wire.length()+peer_bytes
-      let budget = self.device.limits.max_bytes*2+256
-      while !self.cache.is_empty() && (self.cache.length() >= self.device.limits.max_pending || cost > budget-self.cache_bytes) {
+      let response_wire = if response_wire.length() >
+        max_apdu_size(request.max_apdu) {
+        encode_apdu(Abort(request.invoke, true, 11), limits=self.device.limits)
+      } else {
+        response_wire
+      }
+      let cost = request_wire.length() + response_wire.length() + peer_bytes
+      let budget = self.device.limits.max_bytes * 2 + 256
+      while !self.cache.is_empty() &&
+            (
+              self.cache.length() >= self.device.limits.max_pending ||
+              cost > budget - self.cache_bytes
+            ) {
         let old = self.cache[0]
-        self.cache_bytes -= old.request.length()+old.response.length()+text_bytes(old.peer,256).length()
+        self.cache_bytes -= old.request.length() +
+          old.response.length() +
+          text_bytes(old.peer, 256).length()
         self.cache.remove(0) |> ignore
       }
-      self.cache.push({peer,invoke:request.invoke,request:request_wire,response:response_wire,at:now})
+      self.cache.push({
+        peer,
+        invoke: request.invoke,
+        request: request_wire,
+        response: response_wire,
+        at: now,
+      })
       self.cache_bytes += cost
-      Some(decode_apdu(response_wire,limits=self.device.limits))
+      Some(decode_apdu(response_wire, limits=self.device.limits))
     }
     Unconfirmed(8, body) => {
       let range = decode_who_is(body, limits=self.device.limits)
@@ -198,9 +220,10 @@ pub fn Server::datagram(
   peer : String,
   now : UInt64,
 ) -> Bytes? raise BacnetError {
-  let (npdu_bytes,broadcast) = match decode_bvlc(bytes, limits=self.device.limits) {
-    OriginalUnicast(payload) => (payload,false)
-    OriginalBroadcast(payload) => (payload,true)
+  let (npdu_bytes, broadcast) = match
+    decode_bvlc(bytes, limits=self.device.limits) {
+    OriginalUnicast(payload) => (payload, false)
+    OriginalBroadcast(payload) => (payload, true)
     _ =>
       raise Unsupported(
         "device host accepts only original local-network datagrams",
@@ -214,8 +237,12 @@ pub fn Server::datagram(
     raise Limit("device receive APDU maximum")
   }
   let apdu = decode_apdu(npdu.payload, limits=self.device.limits)
-  if broadcast && apdu is Confirmed(_) { return None }
-  if npdu.expecting_reply != (apdu is Confirmed(_)) { raise Invalid("NPDU expecting-reply mismatch",1) }
+  if broadcast && apdu is Confirmed(_) {
+    return None
+  }
+  if npdu.expecting_reply != (apdu is Confirmed(_)) {
+    raise Invalid("NPDU expecting-reply mismatch", 1)
+  }
   match self.handle(apdu, peer, now) {
     None => None
     Some(response) =>
@@ -269,21 +296,27 @@ pub fn decode_datagram(
   decode_apdu(decode_npdu(payload, limits~).payload, limits~)
 }
 
+///|
 priv struct CachedReply {
   peer : String
-  invoke : Int
+  invoke : Int32
   request : Bytes
   response : Bytes
   at : UInt64
 }
 
+///|
 fn Server::clock(self : Server, now : UInt64) -> Unit raise BacnetError {
-  if now < self.now { raise State("server host clock moved backwards") }
+  if now < self.now {
+    raise State("server host clock moved backwards")
+  }
   self.now = now
-  for i = self.cache.length()-1; i >= 0; i = i - 1 {
+  for i = self.cache.length() - 1; i >= 0; i = i - 1 {
     let entry = self.cache[i]
-    if now-entry.at >= 30UL {
-      self.cache_bytes -= entry.request.length()+entry.response.length()+text_bytes(entry.peer,256).length()
+    if now - entry.at >= 30UL {
+      self.cache_bytes -= entry.request.length() +
+        entry.response.length() +
+        text_bytes(entry.peer, 256).length()
       self.cache.remove(i) |> ignore
     }
   }

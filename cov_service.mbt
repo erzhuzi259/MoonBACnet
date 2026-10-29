@@ -73,9 +73,6 @@ pub fn encode_cov(
     if entry.index is Some(index) {
       values.push(context_uint(1, index))
     }
-    if entry.value.is_empty() {
-      raise Invalid("empty COV value", 0)
-    }
     values.push(Constructed(2, entry.value))
     if entry.priority is Some(priority) {
       require_range(priority, 1, 16, "COV priority")

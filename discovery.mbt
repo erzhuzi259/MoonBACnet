@@ -55,6 +55,7 @@ pub fn decode_who_is(
 ///|
 fn iam_valid(value : IAm) -> Unit raise BacnetError {
   if value.device.kind != 8 ||
+    value.device.instance == 4194303 ||
     value.max_apdu < 50U ||
     value.max_apdu > 65535U ||
     value.segmentation > 3U ||

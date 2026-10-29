@@ -30,6 +30,9 @@ pub fn Device::new(
   limits~ : Limits = Limits::default(),
 ) -> Device raise BacnetError {
   limits.validate()
+  if instance == 4194303 {
+    raise Invalid("wildcard device instance", 0)
+  }
   if vendor > 65535U {
     raise Invalid("vendor identifier", 0)
   }
@@ -84,7 +87,7 @@ pub fn Device::add_object(
   if self.objects.length() >= self.limits.max_objects {
     raise Limit("object count")
   }
-  if self.limits.max_properties < 3 {
+  if self.limits.max_properties < (if id == self.id { 5 } else { 4 }) {
     raise Limit("mandatory object properties")
   }
   if id.kind == 8 && id != self.id {
@@ -143,7 +146,10 @@ pub fn Device::define_property(
   array~ : Bool = false,
 ) -> Unit raise BacnetError {
   let object = self.find(id)
-  if object.properties.length() >= self.limits.max_properties {
+  let computed = 1 +
+    (if id == self.id { 1 } else { 0 }) +
+    (if object.command is Some(_) { 2 } else { 0 })
+  if object.properties.length() + computed >= self.limits.max_properties {
     raise Limit("property count")
   }
   if property == 76U || property == 87U || property == 104U || property == 371U {

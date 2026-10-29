@@ -63,9 +63,6 @@ pub fn encode_property_ack(
   limits~ : Limits = Limits::default(),
 ) -> Bytes raise BacnetError {
   let tags = reference_tags(ack.reference)
-  if ack.value.is_empty() {
-    raise Invalid("empty property value", 0)
-  }
   tags.push(Constructed(3, ack.value))
   encode_tags(tags, limits~)
 }
@@ -78,9 +75,6 @@ pub fn decode_property_ack(
   let f = Fields::new(decode_tags(bytes, limits~))
   let reference = read_reference(f)
   let value = f.children(3)
-  if value.is_empty() {
-    raise Invalid("empty property value", 0)
-  }
   f.done()
   { reference, value, }
 }
@@ -91,9 +85,6 @@ pub fn encode_write_property(
   limits~ : Limits = Limits::default(),
 ) -> Bytes raise BacnetError {
   let tags = reference_tags(request.reference)
-  if request.value.is_empty() {
-    raise Invalid("empty write value", 0)
-  }
   tags.push(Constructed(3, request.value))
   if request.priority is Some(priority) {
     require_range(priority, 1, 16, "command priority")
@@ -110,9 +101,6 @@ pub fn decode_write_property(
   let f = Fields::new(decode_tags(bytes, limits~))
   let reference = read_reference(f)
   let value = f.children(3)
-  if value.is_empty() {
-    raise Invalid("empty write value", 0)
-  }
   let priority = match f.optional_uint(4) {
     Some(n) => {
       if n < 1U || n > 16U {

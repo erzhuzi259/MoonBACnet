@@ -20,6 +20,9 @@ pub fn Device::add_point(
   if commandable && (id.kind == 0 || id.kind == 3 || id.kind == 13) {
     raise Invalid("input point cannot be commandable", 0)
   }
+  if !commandable && (id.kind == 1 || id.kind == 4 || id.kind == 14) {
+    raise Invalid("output object requires command priorities", 0)
+  }
   // Construct a complete candidate before changing the live registry.
   let temp : Device = {
     id: self.id,
@@ -42,7 +45,7 @@ pub fn Device::add_point(
     Binary => ()
   }
   if commandable {
-    if temp.objects[0].properties.length() + 2 > self.limits.max_properties {
+    if temp.objects[0].properties.length() + 3 > self.limits.max_properties {
       raise Limit("command property count")
     }
     temp.objects[0].command = Some(PriorityArray::new(domain, initial))
@@ -127,6 +130,35 @@ pub fn Device::update(
       raise State("commandable value must be written through a priority")
     }
     domain_validate(self.point_domain(object), value)
+  }
+  if property == 111U {
+    let out_of_service = match object.find(81U).values[:] {
+      [Application(Boolean(v))] => v
+      _ => raise State("point Out_Of_Service schema")
+    }
+    match value {
+      Bits(4, data) if data.length() == 1 &&
+        (data[0].to_int() & 15) == 0 &&
+        ((data[0].to_int() & 16) != 0) == out_of_service => ()
+      _ => raise Property(2U, 37U)
+    }
+  }
+  if property == 81U {
+    let enabled = match value {
+      Boolean(v) => v
+      _ => raise Property(2U, 9U)
+    }
+    let status = match object.find(111U).values[:] {
+      [Application(Bits(4, data))] if data.length() == 1 => data[0].to_int()
+      _ => raise State("point Status_Flags schema")
+    }
+    self.replace_scalar(object.find(81U), value)
+    let updated = if enabled { status | 16 } else { status & 0xef }
+    self.replace_scalar(
+      object.find(111U),
+      Bits(4, Bytes::from_array([updated.to_byte()])),
+    )
+    return
   }
   if property == 22U {
     match value {

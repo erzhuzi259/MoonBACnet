@@ -65,8 +65,9 @@ pub fn CovManager::subscribe(
   let object = self.device.find(request.object)
   ignore(self.device.point_domain(object))
   ignore(object.find(85U))
+  ignore(self.device.cov_values(request.object))
   if request.confirmed == Some(true) {
-    raise Unsupported("confirmed COV delivery")
+    raise Property(5U, 45U)
   }
   let mut found = -1
   for i = 0; i < self.subscriptions.length(); i = i + 1 {
@@ -113,6 +114,21 @@ fn Device::cov_values(
 ) -> Array[Tag] raise BacnetError {
   let value = self.read({ object: id, property: 85U, index: None, })
   let status = self.read({ object: id, property: 111U, index: None, })
+  match value[:] {
+    [Application(v)] => domain_validate(self.point_domain(self.find(id)), v)
+    _ => raise Property(2U, 9U)
+  }
+  match status[:] {
+    [Application(Bits(4, data))] if data.length() == 1 => ()
+    _ => raise Property(2U, 9U)
+  }
+  if id.kind == 0 || id.kind == 1 || id.kind == 2 {
+    match self.find(id).find(22U).values[:] {
+      [Application(Real(v))] if v >= 0.0F &&
+        (v.reinterpret_as_uint() & 0x7f800000U) != 0x7f800000U => ()
+      _ => raise Property(2U, 37U)
+    }
+  }
   [Constructed(0, value), Constructed(1, status)]
 }
 
