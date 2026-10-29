@@ -138,10 +138,13 @@ pub fn Server::handle(
     Confirmed(request) => {
       if peer.is_empty() { raise Invalid("empty request peer",0) }
       let peer_bytes = text_bytes(peer,256).length()
-      for cached in self.cache {
+      for i = 0; i < self.cache.length(); i = i + 1 {
+        let cached = self.cache[i]
         if cached.peer == peer && cached.invoke == request.invoke {
-          if cached.request != request_wire { return Some(Abort(request.invoke,true,2)) }
-          return Some(decode_apdu(cached.response,limits=self.device.limits))
+          if cached.request == request_wire { return Some(decode_apdu(cached.response,limits=self.device.limits)) }
+          self.cache_bytes -= cached.request.length()+cached.response.length()+text_bytes(cached.peer,256).length()
+          self.cache.remove(i) |> ignore
+          break
         }
       }
       let response = self.confirmed(request, peer, now) catch {
