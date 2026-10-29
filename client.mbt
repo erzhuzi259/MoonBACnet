@@ -35,6 +35,7 @@ pub struct Client {
   priv retry_limit : Int32
   priv pending : Array[PendingRequest]
   priv mut retained : Int32
+  priv mut next_invoke : Int
   priv mut now : UInt64
 }
 
@@ -48,7 +49,7 @@ pub fn Client::new(
   if timeout == 0UL || retries < 0 || retries > 16 {
     raise Invalid("client timing policy", 0)
   }
-  { limits, timeout, retry_limit: retries, pending: [], retained: 0, now: 0UL, }
+  { limits, timeout, retry_limit: retries, pending: [], retained: 0, now: 0UL, next_invoke: 0, }
 }
 
 ///|
@@ -79,8 +80,9 @@ pub fn Client::start(
   if self.timeout > 18446744073709551615UL - now {
     raise State("request deadline overflow")
   }
-  let mut invoke = 0
-  while invoke < 256 {
+  let mut invoke = self.next_invoke
+  let mut examined = 0
+  while examined < 256 {
     let mut used = false
     for entry in self.pending {
       if entry.peer == peer && entry.request.invoke == invoke {
@@ -91,9 +93,10 @@ pub fn Client::start(
     if !used {
       break
     }
-    invoke += 1
+    invoke = (invoke+1)%256
+    examined += 1
   }
-  if invoke == 256 {
+  if examined == 256 {
     raise Limit("all peer invoke IDs occupied")
   }
   let request = Request::new(invoke, service, body, max_apdu~)
@@ -113,6 +116,7 @@ pub fn Client::start(
     retries: 0,
   })
   self.retained += cost
+  self.next_invoke = (invoke+1)%256
   { peer, invoke, bytes, }
 }
 
@@ -244,3 +248,4 @@ pub extend Completion with @debug.Debug::{to_repr}
 
 ///|
 pub extend ClientEvent with @debug.Debug::{to_repr}
+
