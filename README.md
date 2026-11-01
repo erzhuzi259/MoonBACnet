@@ -121,3 +121,8 @@ CLI支持 tags、apdu、bvlc、npdu、rp、rp-ack、wp、rpm、rpm-ack、cov-sub
 本地严格检查、构建、四后端各52个测试、格式和接口快照已通过。CI配置覆盖上述流程、四个示例、独立oracle、打包与Git/ZIP内容检查；尚未执行公开GitHub CI。来源与AI辅助范围见 [THIRD_PARTY.md](THIRD_PARTY.md)，主要公共API快照见 `pkg.generated.mbti`。
 
 规范与参考：[BACnet委员会](https://bacnet.org/about-bacnet/)、[BACpypes3文档](https://bacpypes3.readthedocs.io/en/latest/)、[BACpypes3源码](https://github.com/JoelBender/BACpypes3)、[固定版本元数据](https://pypi.org/project/bacpypes3/0.0.110/)。
+
+
+## 十一月新增功能
+
+**设备发现与冲突目录**（`DiscoveryDirectory`）；**命令仲裁可解释快照**（`Device::command_snapshot`）；**Native UDP 接入与独立网络验证**（`cmd/udp + scripts/udp_interop.py`）。详见[功能、用途和边界](docs/NOVEMBER_FEATURES.md)，运行 `moon run examples/november --target native --deny-warn`。当前仍为本地未发布源码，不提供虚构安装地址。

@@ -127,6 +127,14 @@ pub(all) enum CommandDomain {
 } derive(@debug.Debug)
 pub fn CommandDomain::to_repr(Self) -> @debug.Repr
 
+pub(all) struct CommandSnapshot {
+  object : ObjectId
+  effective : Value
+  relinquish_default : Value
+  active_priority : Int32?
+  occupied : Array[(Int32, Value)]
+}
+
 pub(all) enum Completion {
   Completed(Apdu)
   ServiceError(UInt32, UInt32)
@@ -184,6 +192,7 @@ pub fn Device::add_object(Self, ObjectId, String) -> Unit raise BacnetError
 pub fn Device::add_point(Self, ObjectId, String, CommandDomain, Value, commandable? : Bool, units? : UInt32) -> Unit raise BacnetError
 pub fn Device::all_property_ids(Self, ObjectId) -> Array[UInt32] raise BacnetError
 pub fn Device::announcement(Self) -> IAm
+pub fn Device::command_snapshot(Self, ObjectId) -> CommandSnapshot raise BacnetError
 pub fn Device::define_property(Self, ObjectId, UInt32, Array[Tag], writable? : Bool, array? : Bool) -> Unit raise BacnetError
 pub fn Device::identifier(Self) -> ObjectId
 pub fn Device::new(Int32, String, UInt32, limits? : Limits) -> Self raise BacnetError
@@ -193,6 +202,22 @@ pub fn Device::resource_limits(Self) -> Limits
 pub fn Device::set_relinquish_default(Self, ObjectId, Value) -> Unit raise BacnetError
 pub fn Device::update(Self, ObjectId, UInt32, Value) -> Unit raise BacnetError
 pub fn Device::write(Self, WriteProperty) -> Unit raise BacnetError
+
+pub(all) struct DiscoveredDevice {
+  peer : String
+  announcement : IAm
+  first_seen : UInt64
+  last_seen : UInt64
+}
+
+pub struct DiscoveryDirectory {
+  // private fields
+}
+pub fn DiscoveryDirectory::devices(Self) -> Array[DiscoveredDevice]
+pub fn DiscoveryDirectory::expire(Self, UInt64, UInt64) -> Array[DiscoveredDevice] raise BacnetError
+pub fn DiscoveryDirectory::forget(Self, ObjectId) -> Bool
+pub fn DiscoveryDirectory::new(maximum? : Int32) -> Self raise BacnetError
+pub fn DiscoveryDirectory::observe(Self, String, IAm, UInt64) -> Bool raise BacnetError
 
 pub(all) struct IAm {
   device : ObjectId

@@ -46,3 +46,8 @@ jobs:
         run: |
           moon package
           python scripts/verify_repository.py
+
+      - name: November integration scenario
+        run: moon run examples/november --target native --deny-warn
+      - name: Independent loopback UDP gateway integration
+        run: python scripts/udp_interop.py

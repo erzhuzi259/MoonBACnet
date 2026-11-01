@@ -1,0 +1,13 @@
+import {
+  "local/moonbacnet" @bac,
+  "moonbitlang/core/env",
+  "moonbitlang/core/string",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/async",
+  "moonbitlang/async/socket",
+  "moonbitlang/async/stdio",
+}
+
+supported_targets = "+native"
+
+pkgtype(kind: "executable")
