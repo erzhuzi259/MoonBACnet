@@ -116,9 +116,9 @@ moon run cmd/main --target native -- rp INPUT.bin NEW_OUTPUT.bin
 
 CLI支持 tags、apdu、bvlc、npdu、rp、rp-ack、wp、rpm、rpm-ack、cov-sub、cov、whois、iam；输入最多65535字节，输出路径必须尚不存在。`peer` 输入逐行十六进制BACnet/IP datagram，输出对应回复或`-`；保持一个示例设备，固定逻辑时刻0。它用于互操作验证，不是有真实时钟或UDP接入的设备服务。
 
-固定BACpypes3 **0.0.110**，已验证23组类型和13组服务/报文向量双向编码，以及11次真实Python实现对持续MoonBit宿主的请求：发现、优先级写入/读取/释放、RPM、错误、订阅/取消。使用stdio，没有连接外部设备或真实UDP网络，不构成BTL认证、完整标准符合性或厂商兼容认证。
+固定BACpypes3 **0.0.110**，已验证23组类型和13组服务/报文向量双向编码，以及11次真实Python实现对持续MoonBit宿主的请求：发现、优先级写入/读取/释放、RPM、错误、订阅/取消。以上向量与持续宿主对照使用stdio；十一月另增加 `scripts/udp_interop.py`，通过真实回环UDP验证发现、优先级、错误、畸形报文恢复和COV通知/取消。未连接外部厂商设备，不构成BTL认证、完整标准符合性或厂商兼容认证。
 
-本地严格检查、构建、四后端各52个测试、格式和接口快照已通过。CI配置覆盖上述流程、四个示例、独立oracle、打包与Git/ZIP内容检查；尚未执行公开GitHub CI。来源与AI辅助范围见 [THIRD_PARTY.md](THIRD_PARTY.md)，主要公共API快照见 `pkg.generated.mbti`。
+本地严格检查、构建、四后端各54个测试、格式和接口快照已通过。CI配置覆盖上述流程、五个示例、独立stdio/UDP oracle、打包与Git/ZIP内容检查；尚未执行公开GitHub CI。来源与AI辅助范围见 [THIRD_PARTY.md](THIRD_PARTY.md)，主要公共API快照见 `pkg.generated.mbti`。
 
 规范与参考：[BACnet委员会](https://bacnet.org/about-bacnet/)、[BACpypes3文档](https://bacpypes3.readthedocs.io/en/latest/)、[BACpypes3源码](https://github.com/JoelBender/BACpypes3)、[固定版本元数据](https://pypi.org/project/bacpypes3/0.0.110/)。
 
