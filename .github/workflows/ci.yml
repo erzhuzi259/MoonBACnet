@@ -7,47 +7,67 @@ permissions:
   contents: read
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install official MoonBit
+      - uses: hustcer/setup-moonbit@v1
+        with:
+          version: '0.10.16+b1a0e846e'
+          core-version: '0.10.16+b1a0e846e'
+      - name: Windows compiler paths
+        if: runner.os == 'Windows'
+        shell: pwsh
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
-          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
-      - name: Strict compiler build tests format and interfaces
+          ./tools/windows/build-shim.ps1
+          $shim = Join-Path $PWD '_build/windows-path-shims'
+          foreach ($tool in @('MOONC', 'MOONFMT', 'MOONINFO', 'MOONDOC')) {
+            $toolPath = Join-Path $shim "$($tool.ToLower()).exe"
+            "${tool}_OVERRIDE=$toolPath" >> $env:GITHUB_ENV
+          }
+          $env:MOONC_OVERRIDE = Join-Path $shim 'moonc.exe'
+          Push-Location (Join-Path $env:USERPROFILE '.moon/lib/core')
+          try {
+            moon bundle --all --warn-list -a
+            if ($LASTEXITCODE -ne 0) { throw 'Core bundle failed' }
+          } finally { Pop-Location }
+      - name: Resolve dependencies
         run: |
           moon version --all
+          moon update
+      - name: Check build test
+        run: |
           moon check --target all --deny-warn
           moon build --target all --deny-warn
           moon test --target all --deny-warn
+      - name: Format and API stability
+        run: |
           moon fmt --check
           moon info
           git diff --exit-code
-      - name: Application scenarios and bounded sustained workload
+      - name: Run application scenarios and scale workload
         run: |
           moon run examples/hvac --target native --deny-warn
           moon run examples/energy --target native --deny-warn
           moon run examples/monitoring --target js --deny-warn
-          moon run examples/scale --target native --deny-warn
-      - name: Independent BACpypes3 typed codecs and persistent device exchange
+          moon run examples/scale --target native --release --deny-warn
+          moon run examples/november --target native --deny-warn
+      - name: Independent BACpypes3 codecs and persistent device
         run: |
           python -m pip install --target _local/oracle -r scripts/requirements-interop.txt
           python scripts/interop.py
-      - name: Local packaging and source hygiene
+      - name: Independent loopback UDP integration
+        run: python scripts/udp_interop.py
+      - name: Package and source hygiene
         run: |
           moon package
           python scripts/verify_repository.py
-
-      - name: November integration scenario
-        run: moon run examples/november --target native --deny-warn
-      - name: Independent loopback UDP gateway integration
-        run: python scripts/udp_interop.py

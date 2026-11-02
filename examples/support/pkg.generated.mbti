@@ -1,8 +1,8 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "local/moonbacnet/examples/support"
+package "erzhuzi259/moonbacnet/examples/support"
 
 import {
-  "local/moonbacnet",
+  "erzhuzi259/moonbacnet",
 }
 
 // Values

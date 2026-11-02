@@ -29,7 +29,7 @@ moon build --target all --deny-warn
 moon test --target all --deny-warn
 ```
 
-Windows当前工具链路径问题沿用README的项目适配脚本；源代码临时命名空间尚未发布。
+Windows当前工具链路径问题沿用README的项目适配脚本；正式命名空间为 `erzhuzi259/moonbacnet`，安装方式见README。
 
 ## 范围
 

@@ -29,7 +29,9 @@ from bacpypes3.ipv4.bvll import OriginalUnicastNPDU, OriginalBroadcastNPDU, LPDU
 from importlib.metadata import version
 
 assert version("bacpypes3") == "0.0.110"
-exe = ROOT / "_build/native/debug/build/cmd/main" / ("main.exe" if os.name == "nt" else "main")
+executable_dir = ROOT / "_build/native/debug/build/cmd/main"
+exe = next((executable_dir / name for name in ("main.exe", "main")
+            if (executable_dir / name).is_file()), executable_dir / "main.exe")
 if not exe.exists():
     raise SystemExit("Build first: moon build --target native --deny-warn")
 

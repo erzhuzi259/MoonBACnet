@@ -2,7 +2,7 @@
 
 MoonBit 原生的 **BACnet 对象与属性服务核心**：将建筑设备状态、命令优先级、批量属性查询和变化通知交给可复用的类型化 API。协议核心不依赖 Python、JavaScript 或外部 BACnet 运行时，能在 wasm、wasm-gc、js、native 后端使用。
 
-当前是本地0.1.0首版，模块暂为 `local/moonbacnet`，`private=true`。仓库账号及 Mooncakes namespace 确定后再配置公开地址和发布；目前没有可用的公开安装地址。许可证为 Apache-2.0。
+模块：`erzhuzi259/moonbacnet@0.1.0`；[GitHub](https://github.com/erzhuzi259/MoonBACnet) · [Mooncakes](https://mooncakes.io/docs/erzhuzi259/moonbacnet)。许可证为 Apache-2.0。
 
 ## 用途与生态定位
 
@@ -14,7 +14,7 @@ MoonBit 原生的 **BACnet 对象与属性服务核心**：将建筑设备状态
 
 ## 安装与运行
 
-已验证 moonc **v0.10.16**、Moon0.1.20261016；原生目标需要 C 编译器，JS 示例需要 Node.js。本库可只用 MoonBit 构建；Python3.11 和 BACpypes3 仅用于独立互操作测试。
+已验证 moonc **v0.10.16**、Moon0.1.20261016；CI 固定 compiler/core 0.10.16+b1a0e846e。原生目标需要 C 编译器，JS 示例需要 Node.js。本库可只用 MoonBit 构建；Python3.11 和 BACpypes3 仅用于独立互操作测试。
 
 取得源码目录后运行：
 
@@ -35,14 +35,20 @@ Windows 已提供当前官方编译器的路径适配入口。若工具链无法
 & .\tools\windows\moon.ps1 run examples/hvac --target native --deny-warn
 ```
 
-脚本只在本进程为官方 moonc/moonfmt/mooninfo 子进程规范化参数路径，不改变全局环境。依赖 `moonbitlang/async@0.22.5` 只被原生 CLI 的文件及 stdio 宿主导入，类型、服务和设备核心均不依赖它。
+脚本只在本进程为官方 moonc/moonfmt/mooninfo 子进程规范化参数路径，不改变全局环境。依赖 `moonbitlang/async@0.22.5` 只被原生 CLI 的文件、stdio 及回环 UDP 宿主导入，类型、服务和设备核心均不依赖它。
 
 ## 最小使用样例
 
-项目内的消费包使用 `moon.pkg`：
+在已有 MoonBit 工程中安装：
+
+```sh
+moon add erzhuzi259/moonbacnet@0.1.0
+```
+
+使用方 `moon.pkg` 配置导入：
 
 ```moonbit
-import { "local/moonbacnet" @bac, }
+import { "erzhuzi259/moonbacnet" @bac, }
 pkgtype(kind: "executable")
 ```
 
@@ -118,11 +124,11 @@ CLI支持 tags、apdu、bvlc、npdu、rp、rp-ack、wp、rpm、rpm-ack、cov-sub
 
 固定BACpypes3 **0.0.110**，已验证23组类型和13组服务/报文向量双向编码，以及11次真实Python实现对持续MoonBit宿主的请求：发现、优先级写入/读取/释放、RPM、错误、订阅/取消。以上向量与持续宿主对照使用stdio；十一月另增加 `scripts/udp_interop.py`，通过真实回环UDP验证发现、优先级、错误、畸形报文恢复和COV通知/取消。未连接外部厂商设备，不构成BTL认证、完整标准符合性或厂商兼容认证。
 
-本地严格检查、构建、四后端各54个测试、格式和接口快照已通过。CI配置覆盖上述流程、五个示例、独立stdio/UDP oracle、打包与Git/ZIP内容检查；尚未执行公开GitHub CI。来源与AI辅助范围见 [THIRD_PARTY.md](THIRD_PARTY.md)，主要公共API快照见 `pkg.generated.mbti`。
+本地严格检查、构建、四后端各54个测试、格式和接口快照已通过。[Linux/Windows CI](https://github.com/erzhuzi259/MoonBACnet/actions) 覆盖上述流程、五个示例、独立stdio/UDP oracle、打包与历史/ZIP内容检查；工程检查不等于正式赛事验收。申报书及审查/AI/汇总材料可放在项目本地文件夹，经忽略及历史/包检查排除，不进入 Git 或发行包。来源与AI辅助范围见 [THIRD_PARTY.md](THIRD_PARTY.md)，主要公共API快照见 `pkg.generated.mbti`。
 
 规范与参考：[BACnet委员会](https://bacnet.org/about-bacnet/)、[BACpypes3文档](https://bacpypes3.readthedocs.io/en/latest/)、[BACpypes3源码](https://github.com/JoelBender/BACpypes3)、[固定版本元数据](https://pypi.org/project/bacpypes3/0.0.110/)。
 
 
 ## 十一月新增功能
 
-**设备发现与冲突目录**（`DiscoveryDirectory`）；**命令仲裁可解释快照**（`Device::command_snapshot`）；**Native UDP 接入与独立网络验证**（`cmd/udp + scripts/udp_interop.py`）。详见[功能、用途和边界](docs/NOVEMBER_FEATURES.md)，运行 `moon run examples/november --target native --deny-warn`。当前仍为本地未发布源码，不提供虚构安装地址。
+**设备发现与冲突目录**（`DiscoveryDirectory`）；**命令仲裁可解释快照**（`Device::command_snapshot`）；**Native UDP 接入与独立网络验证**（`cmd/udp + scripts/udp_interop.py`）。详见[功能、用途和边界](docs/NOVEMBER_FEATURES.md)，运行 `moon run examples/november --target native --deny-warn`。功能包含于0.1.0，安装方式见上文。

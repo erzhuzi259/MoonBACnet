@@ -1,12 +1,12 @@
-name = "local/moonbacnet"
+name = "erzhuzi259/moonbacnet"
 
 version = "0.1.0"
-
-private = true
 
 license = "Apache-2.0"
 
 readme = "README.md"
+
+repository = "https://github.com/erzhuzi259/MoonBACnet"
 
 description = "Typed BACnet/IP object property services and bounded device application core"
 

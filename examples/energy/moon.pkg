@@ -1,6 +1,6 @@
 import {
-  "local/moonbacnet" @bac,
-  "local/moonbacnet/examples/support",
+  "erzhuzi259/moonbacnet" @bac,
+  "erzhuzi259/moonbacnet/examples/support",
 }
 
 pkgtype(kind: "executable")
