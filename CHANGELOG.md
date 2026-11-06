@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — 2026-11-06
+
+- 本地多点命令原子提交。
+- 设备目录语义差异。
+- 增加回归测试、独立可运行示例与 CI 示例步骤；详见 docs/EXPANSION_20261106.md。
+
 ## 0.1.0 — 2026-11-02
 
 - 设备发现与冲突目录：DiscoveryDirectory

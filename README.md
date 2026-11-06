@@ -132,3 +132,10 @@ CLI支持 tags、apdu、bvlc、npdu、rp、rp-ack、wp、rpm、rpm-ack、cov-sub
 ## 十一月新增功能
 
 **设备发现与冲突目录**（`DiscoveryDirectory`）；**命令仲裁可解释快照**（`Device::command_snapshot`）；**Native UDP 接入与独立网络验证**（`cmd/udp + scripts/udp_interop.py`）。详见[功能、用途和边界](docs/NOVEMBER_FEATURES.md)，运行 `moon run examples/november --target native --deny-warn`。功能包含于0.1.0，安装方式见上文。
+
+
+## 本地开发增量（未发布）
+
+新增 **本地多点命令原子提交**、**设备目录语义差异**，用途、限制和复杂度见 [功能文档](docs/EXPANSION_20261106.md)。
+从本仓库源码运行 `moon run examples/expansion --target native --deny-warn`。
+本节 API 尚未包含在已发布的 0.1.0 中。
