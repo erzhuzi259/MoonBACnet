@@ -14,7 +14,7 @@ MoonBit 原生的 **BACnet 对象与属性服务核心**：将建筑设备状态
 
 ## 安装与运行
 
-已验证 moonc **v0.10.16**、Moon0.1.20261016；CI 固定 compiler/core 0.10.16+b1a0e846e。原生目标需要 C 编译器，JS 示例需要 Node.js。本库可只用 MoonBit 构建；Python3.11 和 BACpypes3 仅用于独立互操作测试。
+已验证 moonc **v0.10.20**、Moon0.1.20261104；CI 固定 compiler/core 0.10.20+65efd5b93。原生目标需要 C 编译器，JS 示例需要 Node.js。本库可只用 MoonBit 构建；Python3.11 和 BACpypes3 仅用于独立互操作测试。
 
 取得源码目录后运行：
 
@@ -139,3 +139,7 @@ CLI支持 tags、apdu、bvlc、npdu、rp、rp-ack、wp、rpm、rpm-ack、cov-sub
 新增 **本地多点命令原子提交**、**设备目录语义差异**，用途、限制和复杂度见 [功能文档](docs/EXPANSION_20261106.md)。
 从本仓库源码运行 `moon run examples/expansion --target native --deny-warn`。
 本节 API 尚未包含在已发布的 0.1.0 中。
+
+## 按设备 APDU 上限规划批量属性读取 (Unreleased)
+
+`plan_read_multiple` 根据设备 I-Am 宣告的接收上限和实际编码长度拆分 ReadPropertyMultiple 请求，保留对象、属性和数组索引顺序。楼宇网关可以把同一采集清单发送给能力不同的控制器，再由 Client 管理 invoke ID、超时和响应。预算同时约束请求数和总字节。该上限约束请求，回复仍由协议和设备限制处理。

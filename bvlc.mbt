@@ -1,4 +1,5 @@
 ///|
+#derive(Debug)
 pub(all) enum Bvlc {
   ResultCode(Int32)
   RegisterForeign(Int32)
@@ -6,7 +7,7 @@ pub(all) enum Bvlc {
   OriginalBroadcast(Bytes)
   Forwarded(Bytes, Bytes)
   DistributeBroadcast(Bytes)
-} derive(Debug)
+}
 
 ///|
 pub fn encode_bvlc(

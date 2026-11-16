@@ -41,7 +41,20 @@ fn main raise {
   let delta = @bac.discovery_delta(before, after)
   assert_eq(delta.changed.length(), 1)
   assert_eq(delta.added.length(), 0)
+  let peer = {
+    ..after[0],
+    announcement: { ..after[0].announcement, max_apdu: 50U, },
+  }
+  let properties = Array::makei(30, i => (85U, Some(i.reinterpret_as_uint())))
+  let batches = @bac.plan_read_multiple(peer, [{ object: x, properties, }])
+  assert_true(batches.length() > 1)
+  let mut total = 0
+  for body in batches {
+    assert_true(body.length() + 4 <= 50)
+    total += @bac.decode_read_multiple(body)[0].properties.length()
+  }
+  assert_eq(total, properties.length())
   println(
-    "Local automation plans commit atomically; inventory deltas identify device endpoint changes",
+    "Automation batches commit atomically; inventory deltas and peer-sized RPM requests verified",
   )
 }

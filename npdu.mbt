@@ -1,10 +1,12 @@
 ///|
+#derive(Debug)
 pub(all) struct Route {
   network : Int32
   address : Bytes
-} derive(Debug)
+}
 
 ///|
+#derive(Debug)
 pub(all) struct Npdu {
   destination : Route?
   source : Route?
@@ -12,7 +14,7 @@ pub(all) struct Npdu {
   expecting_reply : Bool
   priority : Int32
   payload : Bytes
-} derive(Debug)
+}
 
 ///|
 fn route_valid(route : Route, source : Bool) -> Unit raise BacnetError {

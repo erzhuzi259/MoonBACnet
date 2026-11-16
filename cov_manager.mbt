@@ -8,10 +8,11 @@ priv struct Subscription {
 }
 
 ///|
+#derive(Debug)
 pub(all) struct CovEnvelope {
   peer : String
   notification : CovNotification
-} derive(Debug)
+}
 
 ///|
 pub struct CovManager {

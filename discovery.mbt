@@ -1,16 +1,18 @@
 ///|
+#derive(Debug)
 pub(all) struct WhoIs {
   low : Int32?
   high : Int32?
-} derive(Debug)
+}
 
 ///|
+#derive(Debug)
 pub(all) struct IAm {
   device : ObjectId
   max_apdu : UInt32
   segmentation : UInt32
   vendor : UInt32
-} derive(Debug)
+}
 
 ///|
 pub fn encode_who_is(

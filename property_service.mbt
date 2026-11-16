@@ -1,22 +1,25 @@
 ///|
+#derive(Debug, Eq)
 pub(all) struct PropertyRef {
   object : ObjectId
   property : UInt32
   index : UInt32?
-} derive(Debug, Eq)
+}
 
 ///|
+#derive(Debug)
 pub(all) struct PropertyValue {
   reference : PropertyRef
   value : Array[Tag]
-} derive(Debug)
+}
 
 ///|
+#derive(Debug)
 pub(all) struct WriteProperty {
   reference : PropertyRef
   value : Array[Tag]
   priority : Int32?
-} derive(Debug)
+}
 
 ///|
 fn reference_tags(reference : PropertyRef) -> Array[Tag] raise BacnetError {

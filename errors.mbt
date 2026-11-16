@@ -1,13 +1,15 @@
 ///|
+#derive(Debug)
 pub suberror BacnetError {
   Invalid(String, Int32)
   Unsupported(String)
   Limit(String)
   State(String)
   Property(UInt32, UInt32)
-} derive(Debug)
+}
 
 ///|
+#derive(Debug, Eq)
 pub(all) struct Limits {
   max_bytes : Int32
   max_nodes : Int32
@@ -16,7 +18,7 @@ pub(all) struct Limits {
   max_properties : Int32
   max_subscriptions : Int32
   max_pending : Int32
-} derive(Debug, Eq)
+}
 
 ///|
 pub fn Limits::default() -> Limits {

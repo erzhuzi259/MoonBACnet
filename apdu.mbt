@@ -1,4 +1,5 @@
 ///|
+#derive(Debug)
 pub(all) struct Request {
   invoke : Int32
   service : Int32
@@ -6,9 +7,10 @@ pub(all) struct Request {
   max_segments : Int32
   segmented_response_accepted : Bool
   body : Bytes
-} derive(Debug)
+}
 
 ///|
+#derive(Debug)
 pub(all) enum Apdu {
   Confirmed(Request)
   Unconfirmed(Int32, Bytes)
@@ -17,7 +19,7 @@ pub(all) enum Apdu {
   ErrorPdu(Int32, Int32, Bytes)
   Reject(Int32, Int32)
   Abort(Int32, Bool, Int32)
-} derive(Debug)
+}
 
 ///|
 pub fn max_apdu_size(code : Int32) -> Int32 raise BacnetError {

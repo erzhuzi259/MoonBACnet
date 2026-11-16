@@ -74,17 +74,21 @@ pub fn hex_encode(Bytes) -> String
 
 pub fn max_apdu_size(Int32) -> Int32 raise BacnetError
 
+pub fn plan_read_multiple(DiscoveredDevice, Array[ReadAccess], limits? : Limits) -> Array[Bytes] raise BacnetError
+
 // Errors
+#derive(@debug.Debug)
 pub suberror BacnetError {
   Invalid(String, Int32)
   Unsupported(String)
   Limit(String)
   State(String)
   Property(UInt32, UInt32)
-} derive(@debug.Debug)
+}
 pub fn BacnetError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
+#derive(@debug.Debug)
 pub(all) enum Apdu {
   Confirmed(Request)
   Unconfirmed(Int32, Bytes)
@@ -93,9 +97,10 @@ pub(all) enum Apdu {
   ErrorPdu(Int32, Int32, Bytes)
   Reject(Int32, Int32)
   Abort(Int32, Bool, Int32)
-} derive(@debug.Debug)
+}
 pub fn Apdu::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) enum Bvlc {
   ResultCode(Int32)
   RegisterForeign(Int32)
@@ -103,7 +108,7 @@ pub(all) enum Bvlc {
   OriginalBroadcast(Bytes)
   Forwarded(Bytes, Bytes)
   DistributeBroadcast(Bytes)
-} derive(@debug.Debug)
+}
 pub fn Bvlc::to_repr(Self) -> @debug.Repr
 
 pub struct Client {
@@ -116,17 +121,19 @@ pub fn Client::poll(Self, UInt64) -> Array[ClientEvent] raise BacnetError
 pub fn Client::receive(Self, String, Apdu, UInt64) -> Completion? raise BacnetError
 pub fn Client::start(Self, String, Int32, Bytes, UInt64, max_apdu? : Int32) -> Transmission raise BacnetError
 
+#derive(@debug.Debug)
 pub(all) enum ClientEvent {
   Retry(Transmission)
   TimedOut(String, Int32)
-} derive(@debug.Debug)
+}
 pub fn ClientEvent::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) enum CommandDomain {
   Analog
   Binary
   MultiState(UInt32)
-} derive(@debug.Debug)
+}
 pub fn CommandDomain::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CommandSnapshot {
@@ -137,18 +144,20 @@ pub(all) struct CommandSnapshot {
   occupied : Array[(Int32, Value)]
 }
 
+#derive(@debug.Debug)
 pub(all) enum Completion {
   Completed(Apdu)
   ServiceError(UInt32, UInt32)
   Rejected(Int32)
   Aborted(Bool, Int32)
-} derive(@debug.Debug)
+}
 pub fn Completion::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) struct CovEnvelope {
   peer : String
   notification : CovNotification
-} derive(@debug.Debug)
+}
 pub fn CovEnvelope::to_repr(Self) -> @debug.Repr
 
 pub struct CovManager {
@@ -159,29 +168,32 @@ pub fn CovManager::new(Device) -> Self
 pub fn CovManager::poll(Self, UInt64) -> Array[CovEnvelope] raise BacnetError
 pub fn CovManager::subscribe(Self, String, SubscribeCov, UInt64) -> Unit raise BacnetError
 
+#derive(@debug.Debug)
 pub(all) struct CovNotification {
   process : UInt32
   device : ObjectId
   object : ObjectId
   remaining : UInt32
   values : Array[CovProperty]
-} derive(@debug.Debug)
+}
 pub fn CovNotification::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) struct CovProperty {
   property : UInt32
   index : UInt32?
   value : Array[Tag]
   priority : Int32?
-} derive(@debug.Debug)
+}
 pub fn CovProperty::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Date {
   year : Int32
   month : Int32
   day : Int32
   weekday : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn Date::equal(Self, Self) -> Bool
 pub fn Date::not_equal(Self, Self) -> Bool
 pub fn Date::to_repr(Self) -> @debug.Repr
@@ -228,14 +240,16 @@ pub fn DiscoveryDirectory::forget(Self, ObjectId) -> Bool
 pub fn DiscoveryDirectory::new(maximum? : Int32) -> Self raise BacnetError
 pub fn DiscoveryDirectory::observe(Self, String, IAm, UInt64) -> Bool raise BacnetError
 
+#derive(@debug.Debug)
 pub(all) struct IAm {
   device : ObjectId
   max_apdu : UInt32
   segmentation : UInt32
   vendor : UInt32
-} derive(@debug.Debug)
+}
 pub fn IAm::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Limits {
   max_bytes : Int32
   max_nodes : Int32
@@ -244,13 +258,14 @@ pub(all) struct Limits {
   max_properties : Int32
   max_subscriptions : Int32
   max_pending : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn Limits::default() -> Self
 pub fn Limits::equal(Self, Self) -> Bool
 pub fn Limits::not_equal(Self, Self) -> Bool
 pub fn Limits::to_repr(Self) -> @debug.Repr
 pub fn Limits::validate(Self) -> Unit raise BacnetError
 
+#derive(@debug.Debug)
 pub(all) struct Npdu {
   destination : Route?
   source : Route?
@@ -258,14 +273,15 @@ pub(all) struct Npdu {
   expecting_reply : Bool
   priority : Int32
   payload : Bytes
-} derive(@debug.Debug)
+}
 pub fn Npdu::for_local(Bytes, expecting_reply? : Bool) -> Self
 pub fn Npdu::to_repr(Self) -> @debug.Repr
 
+#derive(Compare, Eq, Hash, @debug.Debug)
 pub struct ObjectId {
   kind : Int32
   instance : Int32
-} derive(Compare, Eq, Hash, @debug.Debug)
+}
 pub fn ObjectId::compare(Self, Self) -> Int32
 pub fn ObjectId::equal(Self, Self) -> Bool
 pub fn ObjectId::from_number(UInt32) -> Self
@@ -291,39 +307,45 @@ pub fn PriorityArray::set_default(Self, Value) -> Unit raise BacnetError
 pub fn PriorityArray::values(Self) -> Array[Tag]
 pub fn PriorityArray::write(Self, Int32, Value) -> Unit raise BacnetError
 
+#derive(Eq, @debug.Debug)
 pub(all) struct PropertyRef {
   object : ObjectId
   property : UInt32
   index : UInt32?
-} derive(Eq, @debug.Debug)
+}
 pub fn PropertyRef::equal(Self, Self) -> Bool
 pub fn PropertyRef::not_equal(Self, Self) -> Bool
 pub fn PropertyRef::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) struct PropertyValue {
   reference : PropertyRef
   value : Array[Tag]
-} derive(@debug.Debug)
+}
 pub fn PropertyValue::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) struct ReadAccess {
   object : ObjectId
   properties : Array[(UInt32, UInt32?)]
-} derive(@debug.Debug)
+}
 pub fn ReadAccess::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) struct ReadAccessResult {
   object : ObjectId
   results : Array[ReadResult]
-} derive(@debug.Debug)
+}
 pub fn ReadAccessResult::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) enum ReadResult {
   PropertyData(PropertyRef, Array[Tag])
   PropertyFailure(PropertyRef, UInt32, UInt32)
-} derive(@debug.Debug)
+}
 pub fn ReadResult::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) struct Request {
   invoke : Int32
   service : Int32
@@ -331,14 +353,15 @@ pub(all) struct Request {
   max_segments : Int32
   segmented_response_accepted : Bool
   body : Bytes
-} derive(@debug.Debug)
+}
 pub fn Request::new(Int32, Int32, Bytes, max_apdu? : Int32) -> Self raise BacnetError
 pub fn Request::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) struct Route {
   network : Int32
   address : Bytes
-} derive(@debug.Debug)
+}
 pub fn Route::to_repr(Self) -> @debug.Repr
 
 pub struct Server {
@@ -350,38 +373,43 @@ pub fn Server::handle(Self, Apdu, String, UInt64) -> Apdu? raise BacnetError
 pub fn Server::new(Device) -> Self
 pub fn Server::notifications(Self, UInt64) -> Array[CovEnvelope] raise BacnetError
 
+#derive(@debug.Debug)
 pub(all) struct SubscribeCov {
   process : UInt32
   object : ObjectId
   confirmed : Bool?
   lifetime : UInt32?
-} derive(@debug.Debug)
+}
 pub fn SubscribeCov::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) enum Tag {
   Application(Value)
   Context(Int32, Bytes)
   Constructed(Int32, Array[Tag])
-} derive(@debug.Debug)
+}
 pub fn Tag::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Time {
   hour : Int32
   minute : Int32
   second : Int32
   hundredth : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn Time::equal(Self, Self) -> Bool
 pub fn Time::not_equal(Self, Self) -> Bool
 pub fn Time::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) struct Transmission {
   peer : String
   invoke : Int32
   bytes : Bytes
-} derive(@debug.Debug)
+}
 pub fn Transmission::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) enum Value {
   Null
   Boolean(Bool)
@@ -396,20 +424,22 @@ pub(all) enum Value {
   DateValue(Date)
   TimeValue(Time)
   Object(ObjectId)
-} derive(@debug.Debug)
+}
 pub fn Value::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) struct WhoIs {
   low : Int32?
   high : Int32?
-} derive(@debug.Debug)
+}
 pub fn WhoIs::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) struct WriteProperty {
   reference : PropertyRef
   value : Array[Tag]
   priority : Int32?
-} derive(@debug.Debug)
+}
 pub fn WriteProperty::to_repr(Self) -> @debug.Repr
 
 // Type aliases

@@ -1,20 +1,23 @@
 ///|
+#derive(Debug)
 pub(all) struct ReadAccess {
   object : ObjectId
   properties : Array[(UInt32, UInt32?)]
-} derive(Debug)
+}
 
 ///|
+#derive(Debug)
 pub(all) enum ReadResult {
   PropertyData(PropertyRef, Array[Tag])
   PropertyFailure(PropertyRef, UInt32, UInt32)
-} derive(Debug)
+}
 
 ///|
+#derive(Debug)
 pub(all) struct ReadAccessResult {
   object : ObjectId
   results : Array[ReadResult]
-} derive(Debug)
+}
 
 ///|
 pub fn encode_read_multiple(

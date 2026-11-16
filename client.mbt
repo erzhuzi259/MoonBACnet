@@ -8,25 +8,28 @@ priv struct PendingRequest {
 }
 
 ///|
+#derive(Debug)
 pub(all) struct Transmission {
   peer : String
   invoke : Int32
   bytes : Bytes
-} derive(Debug)
+}
 
 ///|
+#derive(Debug)
 pub(all) enum Completion {
   Completed(Apdu)
   ServiceError(UInt32, UInt32)
   Rejected(Int32)
   Aborted(Bool, Int32)
-} derive(Debug)
+}
 
 ///|
+#derive(Debug)
 pub(all) enum ClientEvent {
   Retry(Transmission)
   TimedOut(String, Int32)
-} derive(Debug)
+}
 
 ///|
 pub struct Client {

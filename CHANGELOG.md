@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased - 2026-11-16
+
+- 按设备 APDU 上限规划批量属性读取
+
 ## Unreleased — 2026-11-06
 
 - 本地多点命令原子提交。

@@ -1,8 +1,9 @@
 ///|
+#derive(Debug, Eq, Compare, Hash)
 pub struct ObjectId {
   kind : Int32
   instance : Int32
-} derive(Debug, Eq, Compare, Hash)
+}
 
 ///|
 pub fn ObjectId::new(
@@ -28,22 +29,25 @@ pub fn ObjectId::from_number(value : UInt32) -> ObjectId {
 }
 
 ///|
+#derive(Debug, Eq)
 pub(all) struct Date {
   year : Int32
   month : Int32
   day : Int32
   weekday : Int32
-} derive(Debug, Eq)
+}
 
 ///|
+#derive(Debug, Eq)
 pub(all) struct Time {
   hour : Int32
   minute : Int32
   second : Int32
   hundredth : Int32
-} derive(Debug, Eq)
+}
 
 ///|
+#derive(Debug)
 pub(all) enum Value {
   Null
   Boolean(Bool)
@@ -58,14 +62,15 @@ pub(all) enum Value {
   DateValue(Date)
   TimeValue(Time)
   Object(ObjectId)
-} derive(Debug)
+}
 
 ///|
+#derive(Debug)
 pub(all) enum Tag {
   Application(Value)
   Context(Int32, Bytes)
   Constructed(Int32, Array[Tag])
-} derive(Debug)
+}
 
 ///|
 fn date_valid(d : Date) -> Bool {

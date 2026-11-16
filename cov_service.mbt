@@ -1,27 +1,30 @@
 ///|
+#derive(Debug)
 pub(all) struct SubscribeCov {
   process : UInt32
   object : ObjectId
   confirmed : Bool?
   lifetime : UInt32?
-} derive(Debug)
+}
 
 ///|
+#derive(Debug)
 pub(all) struct CovProperty {
   property : UInt32
   index : UInt32?
   value : Array[Tag]
   priority : Int32?
-} derive(Debug)
+}
 
 ///|
+#derive(Debug)
 pub(all) struct CovNotification {
   process : UInt32
   device : ObjectId
   object : ObjectId
   remaining : UInt32
   values : Array[CovProperty]
-} derive(Debug)
+}
 
 ///|
 pub fn encode_subscribe_cov(

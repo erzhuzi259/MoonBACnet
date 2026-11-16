@@ -1,9 +1,10 @@
 ///|
+#derive(Debug)
 pub(all) enum CommandDomain {
   Analog
   Binary
   MultiState(UInt32)
-} derive(Debug)
+}
 
 ///|
 pub struct PriorityArray {
