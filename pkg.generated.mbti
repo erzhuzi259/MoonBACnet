@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn correlate_read_multiple(Bytes, Bytes, limits? : Limits) -> Array[ReadResult] raise BacnetError
+
 pub fn decode_apdu(Bytes, limits? : Limits) -> Apdu raise BacnetError
 
 pub fn decode_bvlc(Bytes, limits? : Limits) -> Bvlc raise BacnetError
