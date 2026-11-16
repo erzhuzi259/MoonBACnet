@@ -24,12 +24,15 @@ pub fn plan_read_multiple(
     for property in entry.properties {
       group.push(property)
       let candidate = batch + [{ object: entry.object, properties: group, }]
-      let encoded = encode_read_multiple(candidate, limits~)
-      if encoded.length() <= max_body {
+      let candidate_wire = Some(encode_read_multiple(candidate, limits~)) catch {
+        Limit(_) => None
+        error => raise error
+      }
+      if candidate_wire is Some(encoded) && encoded.length() <= max_body {
         wire = encoded
       } else {
         if wire.is_empty() {
-          raise Limit("one RPM property exceeds peer APDU")
+          raise Limit("one RPM property exceeds a local or peer APDU limit")
         }
         if output.length() >= limits.max_pending ||
           wire.length() > limits.max_bytes - total {
