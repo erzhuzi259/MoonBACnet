@@ -6,6 +6,10 @@ import {
 }
 
 // Values
+pub fn compile_read_batches(DiscoveredDevice, Array[ReadAccess], limits? : Limits) -> Array[ReadBatch] raise BacnetError
+
+pub fn correlate_read_batches(Array[ReadBatch], Array[Bytes], limits? : Limits) -> Array[ReadResult] raise BacnetError
+
 pub fn correlate_read_multiple(Bytes, Bytes, limits? : Limits) -> Array[ReadResult] raise BacnetError
 
 pub fn decode_apdu(Bytes, limits? : Limits) -> Apdu raise BacnetError
@@ -118,6 +122,7 @@ pub struct Client {
 }
 pub fn Client::cancel(Self, String, Int32) -> Bool raise BacnetError
 pub fn Client::new(timeout? : UInt64, retries? : Int32, limits? : Limits) -> Self raise BacnetError
+pub fn Client::next_deadline(Self) -> UInt64?
 pub fn Client::pending_count(Self) -> Int32
 pub fn Client::poll(Self, UInt64) -> Array[ClientEvent] raise BacnetError
 pub fn Client::receive(Self, String, Apdu, UInt64) -> Completion? raise BacnetError
@@ -239,6 +244,7 @@ pub struct DiscoveryDirectory {
 pub fn DiscoveryDirectory::devices(Self) -> Array[DiscoveredDevice]
 pub fn DiscoveryDirectory::expire(Self, UInt64, UInt64) -> Array[DiscoveredDevice] raise BacnetError
 pub fn DiscoveryDirectory::forget(Self, ObjectId) -> Bool
+pub fn DiscoveryDirectory::lookup(Self, ObjectId, UInt64, max_age? : UInt64?) -> DiscoveredDevice? raise BacnetError
 pub fn DiscoveryDirectory::new(maximum? : Int32) -> Self raise BacnetError
 pub fn DiscoveryDirectory::observe(Self, String, IAm, UInt64) -> Bool raise BacnetError
 
@@ -339,6 +345,11 @@ pub(all) struct ReadAccessResult {
   results : Array[ReadResult]
 }
 pub fn ReadAccessResult::to_repr(Self) -> @debug.Repr
+
+pub(all) struct ReadBatch {
+  body : Bytes
+  access : Array[ReadAccess]
+}
 
 #derive(@debug.Debug)
 pub(all) enum ReadResult {

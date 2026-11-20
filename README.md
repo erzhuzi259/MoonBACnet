@@ -143,3 +143,7 @@ CLI支持 tags、apdu、bvlc、npdu、rp、rp-ack、wp、rpm、rpm-ack、cov-sub
 ## 按设备 APDU 上限规划批量属性读取 (Unreleased)
 
 `plan_read_multiple` 根据设备 I-Am 宣告的接收上限和实际编码长度拆分 ReadPropertyMultiple 请求，保留对象、属性和数组索引顺序。楼宇网关可以把同一采集清单发送给能力不同的控制器，再由 Client 管理 invoke ID、超时和响应。预算同时约束请求数和总字节。该上限约束请求，回复仍由协议和设备限制处理。
+
+## November additions
+
+Use `DiscoveryDirectory::lookup` to select a fresh device identity, then `compile_read_batches` to generate bounded ReadPropertyMultiple requests with their exact property keys. After receiving the replies, `correlate_read_batches` validates the ordered batch against original wire requests, preserving device-reported property errors. `Client::next_deadline` exposes the next retry or expiry on the host clock. The peer APDU budget applies to requests. Hosts still own transport, reply scheduling and concurrency.
