@@ -147,3 +147,9 @@ CLI支持 tags、apdu、bvlc、npdu、rp、rp-ack、wp、rpm、rpm-ack、cov-sub
 ## November additions
 
 Use `DiscoveryDirectory::lookup` to select a fresh device identity, then `compile_read_batches` to generate bounded ReadPropertyMultiple requests with their exact property keys. After receiving the replies, `correlate_read_batches` validates the ordered batch against original wire requests, preserving device-reported property errors. `Client::next_deadline` exposes the next retry or expiry on the host clock. The peer APDU budget applies to requests. Hosts still own transport, reply scheduling and concurrency.
+
+## 本期交付复核
+
+当前交付针对 IPv4 BACnet/IP 的楼宇设备接入。设备发现得到的能力约束批量读请求，响应按原属性和数组索引关联。无效对象保留局部错误。优先级覆盖与释放、COV 生命周期及客户端重试期限由宿主提供的时钟驱动。
+
+四个后端各通过 64 项回归，六个业务和规模示例均可运行。BACpypes3 0.0.110 对照验证了 23 组应用值、13 组服务和报文向量、11 次持续 stdio 交互，以及真实回环 UDP 的发现、读写、畸形报文恢复和 COV 取消。0.1.0 是已发布基线，当前批量读取规划与截止时间接口可从主分支复现。
