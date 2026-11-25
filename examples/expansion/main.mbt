@@ -41,20 +41,46 @@ fn main raise {
   let delta = @bac.discovery_delta(before, after)
   assert_eq(delta.changed.length(), 1)
   assert_eq(delta.added.length(), 0)
-  let peer = {
-    ..after[0],
-    announcement: { ..after[0].announcement, max_apdu: 50U, },
+  let directory = @bac.DiscoveryDirectory::new()
+  let announcement = { ..device.announcement(), max_apdu: 50U, }
+  assert_true(directory.observe("gateway-new", announcement, 2UL))
+  let peer = directory
+    .lookup(announcement.device, 3UL, max_age=Some(10UL))
+    .unwrap()
+  let missing = @bac.ObjectId::new(2, 3)
+  let properties = Array::makei(17, i => (87U, Some(i.reinterpret_as_uint())))
+  let plan = @bac.compile_read_batches(peer, [
+    { object: x, properties, },
+    { object: y, properties: [(85U, None)], },
+    { object: missing, properties: [(85U, None)], },
+  ])
+  assert_true(plan.length() > 1)
+  let client = @bac.Client::new()
+  let server = @bac.Server::new(device)
+  let replies : Array[Bytes] = []
+  let mut now = 3UL
+  for batch in plan {
+    assert_true(batch.body.length() + 4 <= 50)
+    let tx = client.start(peer.peer, 14, batch.body, now)
+    assert_eq(client.next_deadline(), Some(now + 3UL))
+    now += 1UL
+    let reply = server.datagram(tx.bytes, "collector", now).unwrap()
+    match client.receive(peer.peer, @bac.decode_datagram(reply), now) {
+      Some(Completed(ComplexAck(_, 14, body))) => replies.push(body)
+      _ => raise Failure("expected a ReadPropertyMultiple acknowledgement")
+    }
   }
-  let properties = Array::makei(30, i => (85U, Some(i.reinterpret_as_uint())))
-  let batches = @bac.plan_read_multiple(peer, [{ object: x, properties, }])
-  assert_true(batches.length() > 1)
-  let mut total = 0
-  for body in batches {
-    assert_true(body.length() + 4 <= 50)
-    total += @bac.decode_read_multiple(body)[0].properties.length()
-  }
-  assert_eq(total, properties.length())
+  assert_eq(client.next_deadline(), None)
+  let outcomes = @bac.correlate_read_batches(plan, replies)
+  assert_eq(outcomes.length(), 19)
+  assert_true(outcomes[0] is PropertyData(_, [Application(Unsigned(16U))]))
+  assert_true(outcomes[1] is PropertyData({ index: Some(1U), .. }, _))
+  assert_true(outcomes[17] is PropertyData(_, [Application(Real(24.0F))]))
+  assert_true(
+    outcomes[18] is PropertyFailure(reference, _, _) &&
+    reference.object == missing,
+  )
   println(
-    "Automation batches commit atomically; inventory deltas and peer-sized RPM requests verified",
+    "Atomic commands, device migration and APDU-bounded reads with independent property outcomes verified",
   )
 }

@@ -1,14 +1,13 @@
 # Changelog
 
-## Unreleased - 2026-11-16
+## 0.2.0 — 2026-11-25
 
-- 按设备 APDU 上限规划批量属性读取
-
-## Unreleased — 2026-11-06
-
-- 本地多点命令原子提交。
-- 设备目录语义差异。
-- 增加回归测试、独立可运行示例与 CI 示例步骤；详见 docs/EXPANSION_20261106.md。
+- 按 I-Am 公告的 APDU 上限和本地预算拆分 ReadPropertyMultiple，保留对象、属性和数组索引的顺序。
+- 增加 `ReadBatch`、`compile_read_batches` 和 `correlate_read_batches`，对照原始请求核验响应，并保留设备返回的属性级错误。
+- `DiscoveryDirectory::lookup` 按设备标识查找仍有效的记录，`discovery_delta` 报告设备迁移、能力变化及增删。
+- `Client::next_deadline` 提供请求的下一次重试或失效时刻，供宿主调度。
+- `Device::apply_commands` 在设备本地原子提交多个设定点的优先级写入，任一请求失败时回滚。
+- 扩展示例贯通发现、按 APDU 拆分、驱动客户端期限和对回 19 个属性结果，包含数组索引和未知对象错误。
 
 ## 0.1.0 — 2026-11-02
 

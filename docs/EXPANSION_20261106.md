@@ -1,6 +1,6 @@
 # MoonBACnet 增量功能：2026-11-06
 
-状态：本地未发布增量。使用本目录源码运行，已发布的 0.1.0 不包含本页新增 API。
+本页功能自 0.2.0 起随发行版提供。
 
 ## 本地多点命令原子提交与设备目录语义差异
 `Device::apply_commands(requests)` 对本地 commandable 对象的 Present_Value(85) 批量写入进行暂存。
@@ -30,4 +30,4 @@ moon test --target all --deny-warn
 ```
 
 Windows 使用 README 中对应的 Moon 包装脚本替代 `moon`。
-CI 已添加该示例；无需网络服务、私钥或真实设备。
+扩展示例还执行 I-Am 目录查找、按 APDU 上限拆分请求、读取客户端期限和关联 19 个属性结果。CI 运行该示例，无需外部网络服务或真实设备。

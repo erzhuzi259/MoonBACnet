@@ -2,7 +2,7 @@
 
 MoonBit 原生的 **BACnet 对象与属性服务核心**：将建筑设备状态、命令优先级、批量属性查询和变化通知交给可复用的类型化 API。协议核心不依赖 Python、JavaScript 或外部 BACnet 运行时，能在 wasm、wasm-gc、js、native 后端使用。
 
-模块：`erzhuzi259/moonbacnet@0.1.0`；[GitHub](https://github.com/erzhuzi259/MoonBACnet) · [Mooncakes](https://mooncakes.io/docs/erzhuzi259/moonbacnet)。许可证为 Apache-2.0。
+模块：`erzhuzi259/moonbacnet@0.2.0`；[GitHub](https://github.com/erzhuzi259/MoonBACnet) · [Mooncakes](https://mooncakes.io/docs/erzhuzi259/moonbacnet)。许可证为 Apache-2.0。
 
 ## 用途与生态定位
 
@@ -42,7 +42,7 @@ Windows 已提供当前官方编译器的路径适配入口。若工具链无法
 在已有 MoonBit 工程中安装：
 
 ```sh
-moon add erzhuzi259/moonbacnet@0.1.0
+moon add erzhuzi259/moonbacnet@0.2.0
 ```
 
 使用方 `moon.pkg` 配置导入：
@@ -77,7 +77,7 @@ fn main raise {
 
 ## API 与功能边界
 
-| 层次 | 已实现 | 首版边界 |
+| 层次 | 已实现 | 支持边界 |
 | --- | --- | --- |
 | 应用值 | null/bool/uint32/int32/REAL/DOUBLE/octet/string/bits/enum/date/time/object-id，精确位模式，嵌套context | 字符串仅encoding0 UTF-8；日期使用1900年偏移和协议通配字节，不提供日历运算 |
 | 标签 | 扩展tag、8/16/32位长度、opening/closing、严格截断/计数/深度检查 | 未知application tag明确拒绝；编码规范化整数宽度，不保留原输入的非最短形式 |
@@ -88,7 +88,7 @@ fn main raise {
 | 测点 | analog/binary/multi-state input/output/value，类型域、Status_Flags、Out_Of_Service | 为明确子集对象模型，未实现标准对象的所有必备属性/行为；不是完整可认证设备profile |
 | 控制 |16级在途命令槽、默认priority16、Null释放、relinquish default、域检查 | priority6保留，网络写入拒绝；未实现输出最小开/关时间及优先级6内部计时；默认值由宿主API设置 |
 | COV | 初始快照、累计模拟量阈值、二进制/状态变化、续期/取消/过期、原子poll | 只接受unconfirmed通知订阅；0 lifetime代表不定期，取消为两个可选字段均缺失；无通知持久重发 |
-| 事务 | 按peer关联invoke/service/reference、轮转ID、超时/定次重试/取消 | 无网络socket；重复写入的业务幂等性仍由宿主决定；RPM客户端校验结构与service，不实现完整请求结果集合证明 |
+| 事务 | 按peer关联invoke/service/reference、轮转ID、超时/定次重试/取消 | 无网络socket；重复写入的业务幂等性仍由宿主决定；Client 关联服务，显式属性请求可另用 `correlate_read_batches` 校验结果 |
 
 通用 Tag/服务codec能表示设备profile之外的数据。`Device.add_point` 检查标准测点kind与值域；输出对象必须启用命令优先级，输入对象不得设为commandable。网络权限由注册时的 writable 及 commandable 属性决定。`Device.update` 是可信宿主入口，维护四位状态标志与 Out_Of_Service 一致性；不实现输入点脱机模式下的网络写入扩展。
 
@@ -124,32 +124,22 @@ CLI支持 tags、apdu、bvlc、npdu、rp、rp-ack、wp、rpm、rpm-ack、cov-sub
 
 固定BACpypes3 **0.0.110**，已验证23组类型和13组服务/报文向量双向编码，以及11次真实Python实现对持续MoonBit宿主的请求：发现、优先级写入/读取/释放、RPM、错误、订阅/取消。以上向量与持续宿主对照使用stdio；十一月另增加 `scripts/udp_interop.py`，通过真实回环UDP验证发现、优先级、错误、畸形报文恢复和COV通知/取消。未连接外部厂商设备，不构成BTL认证、完整标准符合性或厂商兼容认证。
 
-本地严格检查、构建、四后端各54个测试、格式和接口快照已通过。[Linux/Windows CI](https://github.com/erzhuzi259/MoonBACnet/actions) 覆盖上述流程、五个示例、独立stdio/UDP oracle、打包与历史/ZIP内容检查；工程检查不等于正式赛事验收。申报书及审查/AI/汇总材料可放在项目本地文件夹，经忽略及历史/包检查排除，不进入 Git 或发行包。来源与AI辅助范围见 [THIRD_PARTY.md](THIRD_PARTY.md)，主要公共API快照见 `pkg.generated.mbti`。
+本地严格检查、构建、四后端各 64 项测试、格式和接口快照已通过。[Linux/Windows CI](https://github.com/erzhuzi259/MoonBACnet/actions) 覆盖上述流程、六个示例、独立stdio/UDP oracle、打包与历史/ZIP内容检查；工程检查不等于正式赛事验收。申报书及审查/AI/汇总材料可放在项目本地文件夹，经忽略及历史/包检查排除，不进入 Git 或发行包。来源与AI辅助范围见 [THIRD_PARTY.md](THIRD_PARTY.md)，主要公共API快照见 `pkg.generated.mbti`。
 
 规范与参考：[BACnet委员会](https://bacnet.org/about-bacnet/)、[BACpypes3文档](https://bacpypes3.readthedocs.io/en/latest/)、[BACpypes3源码](https://github.com/JoelBender/BACpypes3)、[固定版本元数据](https://pypi.org/project/bacpypes3/0.0.110/)。
 
 
 ## 十一月新增功能
 
-**设备发现与冲突目录**（`DiscoveryDirectory`）；**命令仲裁可解释快照**（`Device::command_snapshot`）；**Native UDP 接入与独立网络验证**（`cmd/udp + scripts/udp_interop.py`）。详见[功能、用途和边界](docs/NOVEMBER_FEATURES.md)，运行 `moon run examples/november --target native --deny-warn`。功能包含于0.1.0，安装方式见上文。
+**设备发现与冲突目录**（`DiscoveryDirectory`）；**命令仲裁可解释快照**（`Device::command_snapshot`）；**Native UDP 接入与独立网络验证**（`cmd/udp + scripts/udp_interop.py`）。详见[功能、用途和边界](docs/NOVEMBER_FEATURES.md)，运行 `moon run examples/november --target native --deny-warn`。这些功能自 0.1.0 起提供，安装方式见上文。
 
 
-## 本地开发增量（未发布）
+## 0.2.0 交付
 
-新增 **本地多点命令原子提交**、**设备目录语义差异**，用途、限制和复杂度见 [功能文档](docs/EXPANSION_20261106.md)。
-从本仓库源码运行 `moon run examples/expansion --target native --deny-warn`。
-本节 API 尚未包含在已发布的 0.1.0 中。
+**楼宇网关批量读取。** 用 `DiscoveryDirectory::lookup` 查找有效设备记录。`compile_read_batches` 根据 I-Am 接收上限与实际编码长度将采集清单拆成多批。`Client` 关联对端、invoke ID 和服务，`next_deadline` 供宿主安排重试或超时。收到响应后，`correlate_read_batches` 按原始请求核验对象、属性和数组索引。设备报告的单项错误与成功数据一起返回。APDU 上限约束请求，回复仍按协议和设备各自的预算处理。精确关联面向显式属性清单。
 
-## 按设备 APDU 上限规划批量属性读取 (Unreleased)
+**本地设定点与设备目录。** `Device::apply_commands` 校验整批本地设定点命令后一次提交，失败时保留原状态。设备目录差异记录端点迁移、能力变化及增删，普通刷新不产生变化。接口和边界见 [功能文档](docs/EXPANSION_20261106.md)。
 
-`plan_read_multiple` 根据设备 I-Am 宣告的接收上限和实际编码长度拆分 ReadPropertyMultiple 请求，保留对象、属性和数组索引顺序。楼宇网关可以把同一采集清单发送给能力不同的控制器，再由 Client 管理 invoke ID、超时和响应。预算同时约束请求数和总字节。该上限约束请求，回复仍由协议和设备限制处理。
+运行 `moon run examples/expansion --target native --deny-warn`，可复现 50 字节 APDU 下的多批请求、19 个属性结果、优先级数组索引、未知对象错误和等待回复时和完成后的期限。Windows 可使用上文包装脚本。
 
-## November additions
-
-Use `DiscoveryDirectory::lookup` to select a fresh device identity, then `compile_read_batches` to generate bounded ReadPropertyMultiple requests with their exact property keys. After receiving the replies, `correlate_read_batches` validates the ordered batch against original wire requests, preserving device-reported property errors. `Client::next_deadline` exposes the next retry or expiry on the host clock. The peer APDU budget applies to requests. Hosts still own transport, reply scheduling and concurrency.
-
-## 本期交付复核
-
-当前交付针对 IPv4 BACnet/IP 的楼宇设备接入。设备发现得到的能力约束批量读请求，响应按原属性和数组索引关联。无效对象保留局部错误。优先级覆盖与释放、COV 生命周期及客户端重试期限由宿主提供的时钟驱动。
-
-四个后端各通过 64 项回归，六个业务和规模示例均可运行。BACpypes3 0.0.110 对照验证了 23 组应用值、13 组服务和报文向量、11 次持续 stdio 交互，以及真实回环 UDP 的发现、读写、畸形报文恢复和 COV 取消。0.1.0 是已发布基线，当前批量读取规划与截止时间接口可从主分支复现。
+四个后端各通过 64 项回归，六个业务和规模示例均通过。BACpypes3 0.0.110 对照覆盖 23 组应用值、13 组服务和报文向量、11 次持续 stdio 请求，以及回环 UDP 的发现、优先级读写与释放、畸形报文恢复和 COV 通知／取消。
