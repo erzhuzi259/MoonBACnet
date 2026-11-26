@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — 2026-11-26
+
+- 补充 Device 与普通 IPv4 Network Port 身份、能力和属性构建。
+- 实现 Who-Has／I-Have、设备通配寻址、RPM 必需和可选属性选择器。
+- 补充脱机输入写入、对象改名、当前命令优先级和默认值写入。
+- 实现确认型 COV 的通知、接收去重、ACK、有界重传与取消。
+- 对分段确认请求返回标准 Abort，增加标准交互示例和独立协议验证。
+
 ## 0.2.0 — 2026-11-25
 
 - 按 I-Am 公告的 APDU 上限和本地预算拆分 ReadPropertyMultiple，保留对象、属性和数组索引的顺序。

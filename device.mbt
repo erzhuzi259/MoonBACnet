@@ -20,6 +20,7 @@ pub struct Device {
   priv limits : Limits
   priv objects : Array[DeviceObject]
   priv mut stored_bytes : Int32
+  priv mut database_revision : UInt32
 }
 
 ///|
@@ -37,7 +38,14 @@ pub fn Device::new(
     raise Invalid("vendor identifier", 0)
   }
   let id = ObjectId::new(8, instance)
-  let device : Device = { id, vendor, limits, objects: [], stored_bytes: 0, }
+  let device : Device = {
+    id,
+    vendor,
+    limits,
+    objects: [],
+    stored_bytes: 0,
+    database_revision: 0U,
+  }
   device.add_object(id, name)
   device.define_property(id, 120U, [Application(Unsigned(vendor))])
   device.define_property(id, 62U, [Application(Unsigned(1476U))])
@@ -134,6 +142,7 @@ pub fn Device::add_object(
   }
   self.objects.push({ id, properties, command: None, })
   self.stored_bytes += added
+  self.database_revision += 1U
 }
 
 ///|
@@ -147,12 +156,26 @@ pub fn Device::define_property(
 ) -> Unit raise BacnetError {
   let object = self.find(id)
   let computed = 1 +
-    (if id == self.id { 1 } else { 0 }) +
-    (if object.command is Some(_) { 2 } else { 0 })
+    (if id == self.id {
+      if object.properties.any(p => p.id == 139U) {
+        3
+      } else {
+        1
+      }
+    } else {
+      0
+    }) +
+    (if object.command is Some(_) { 3 } else { 0 })
   if object.properties.length() + computed >= self.limits.max_properties {
     raise Limit("property count")
   }
-  if property == 76U || property == 87U || property == 104U || property == 371U {
+  if property == 76U ||
+    property == 87U ||
+    property == 104U ||
+    property == 371U ||
+    property == 431U ||
+    property == 96U ||
+    property == 97U {
     raise State("property is managed by registry")
   }
   for entry in object.properties {
@@ -173,6 +196,7 @@ pub fn Device::define_property(
   let frozen = decode_tags(wire, limits=self.limits)
   object.properties.push({ id: property, values: frozen, writable, array, })
   self.stored_bytes += wire.length()
+  self.database_revision += 1U
 }
 
 ///|
@@ -200,6 +224,7 @@ pub fn Device::read(
   self : Device,
   reference : PropertyRef,
 ) -> Array[Tag] raise BacnetError {
+  let reference = self.read_reference(reference)
   let object = self.find(reference.object)
   let (value, array) = match reference.property {
     76U if reference.object == self.id =>
@@ -210,6 +235,42 @@ pub fn Device::read(
         .property_ids(reference.object)
         .map(fn(p) { Application(Enumerated(p)) }),
         true,
+      )
+    155U if reference.object == self.id &&
+      object.properties.any(p => p.id == 155U) =>
+      ([Application(Unsigned(self.database_revision))], false)
+    431U =>
+      match object.command {
+        Some(c) =>
+          (
+            [
+              Application(
+                match c.active_priority() {
+                  Some(p) => Unsigned(p.reinterpret_as_uint())
+                  None => Null
+                },
+              ),
+            ],
+            false,
+          )
+        None => raise Property(2U, 32U)
+      }
+    97U if reference.object == self.id =>
+      (
+        [Application(capability_bits(49, [1, 5, 12, 14, 15, 28, 33, 34]))],
+        false,
+      )
+    96U if reference.object == self.id =>
+      (
+        [
+          Application(
+            capability_bits(
+              63,
+              self.objects.map(o => o.id.kind).filter(k => k < 63),
+            ),
+          ),
+        ],
+        false,
       )
     87U =>
       match object.command {
@@ -239,10 +300,13 @@ pub fn Device::property_ids(
   let result = object.properties.map(fn(p) { p.id })
   if id == self.id {
     result.push(76U)
+    if object.properties.any(p => p.id == 139U) {
+      result.append([96U, 97U])
+    }
   }
   if object.command is Some(_) {
     result.push(87U)
-    result.push(104U)
+    result.append([104U, 431U])
   }
   // Property_List excludes the three mandatory identification properties and itself.
   result.filter(fn(p) { p != 75U && p != 77U && p != 79U })

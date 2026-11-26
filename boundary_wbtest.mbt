@@ -75,7 +75,7 @@ test "small configured reply budget yields bounded abort and write remains retry
 }
 
 ///|
-test "COV admission rejects incomplete configured points and confirmed notification requests before subscribing" {
+test "COV admission accepts confirmed mode but rejects incomplete points" {
   let d = sample_device()
   let server = Server::new(d)
   let request = encode_subscribe_cov({
@@ -85,8 +85,8 @@ test "COV admission rejects incomplete configured points and confirmed notificat
     lifetime: Some(5U),
   })
   match request_reply(server, 1, 5, request) {
-    ErrorPdu(_, 5, bytes) => assert_eq(decode_error(bytes), (5U, 45U))
-    _ => fail("expected unsupported optional functionality service error")
+    SimpleAck(_, 5) => ()
+    _ => fail("expected confirmed COV subscription acknowledgement")
   }
   assert_eq(server.notifications(0UL).length(), 0)
   let partial = ObjectId::new(0, 99)

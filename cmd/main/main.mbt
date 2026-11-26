@@ -1,6 +1,13 @@
 ///|
 fn demo_device() -> @bac.Device raise {
-  let d = @bac.Device::new(42, "moonbacnet-demo", 999U)
+  let d = @bac.Device::new_standard(42, "moonbacnet-demo", 999U, {
+    instance: 1,
+    name: "stdio-test-port",
+    address: b"\x7f\x00\x00\x01",
+    subnet_mask: b"\xff\x00\x00\x00",
+    gateway: b"\x00\x00\x00\x00",
+    udp_port: 47808U,
+  })
   d.add_point(
     @bac.ObjectId::new(0, 1),
     "temperature",
@@ -79,6 +86,8 @@ fn canonical(mode : String, bytes : Bytes) -> Bytes raise {
     "cov" => @bac.encode_cov(@bac.decode_cov(bytes))
     "whois" => @bac.encode_who_is(@bac.decode_who_is(bytes))
     "iam" => @bac.encode_i_am(@bac.decode_i_am(bytes))
+    "whohas" => @bac.encode_who_has(@bac.decode_who_has(bytes))
+    "ihave" => @bac.encode_i_have(@bac.decode_i_have(bytes))
     _ => raise Failure("unknown codec mode")
   }
 }

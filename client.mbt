@@ -194,7 +194,10 @@ pub fn Client::receive(
   let result = match response {
     ComplexAck(_, 12, bytes) => {
       let ack = decode_property_ack(bytes, limits=self.limits)
-      if ack.reference != decode_read_property(request.body, limits=self.limits) {
+      if !matches_property_reference(
+          decode_read_property(request.body, limits=self.limits),
+          ack.reference,
+        ) {
         raise State("response property reference mismatch")
       }
       Completed(response)
@@ -203,7 +206,7 @@ pub fn Client::receive(
       ignore(decode_multiple_ack(bytes, limits=self.limits))
       Completed(response)
     }
-    SimpleAck(_, 5) | SimpleAck(_, 15) => Completed(response)
+    SimpleAck(_, 1) | SimpleAck(_, 5) | SimpleAck(_, 15) => Completed(response)
     ErrorPdu(_, _, bytes) => {
       let (class, code) = decode_error(bytes)
       ServiceError(class, code)

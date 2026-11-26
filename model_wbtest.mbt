@@ -141,13 +141,15 @@ test "network writes enforce schema permissions and priority array behavior" {
   })
   assert_eq(d.active_priority(id), Some(16))
   assert_eq(d.read(reference(id, property=87U)).length(), 16)
-  expect_error(() => {
-    d.write({
-      reference: reference(id, property=77U),
-      value: [Application(Text("rename"))],
-      priority: None,
-    })
+  d.write({
+    reference: reference(id, property=77U),
+    value: [Application(Text("rename"))],
+    priority: None,
   })
+  assert_eq(
+    scalar_wire(d, id, property=77U),
+    encode_tags([Application(Text("rename"))]),
+  )
   expect_error(() => d.update(id, 85U, Real(2.0F)))
   d.set_relinquish_default(id, Real(17.0F))
   d.write({

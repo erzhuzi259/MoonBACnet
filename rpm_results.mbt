@@ -15,8 +15,15 @@ pub fn correlate_read_multiple(
   let ordered : Array[ReadResult] = []
   for i, access in expected {
     let result = actual[i]
-    if result.object != access.object ||
-      result.results.length() != access.properties.length() {
+    let resolved = access.object == result.object ||
+      (
+        access.object.kind == 8 &&
+        access.object.instance == 4194303 &&
+        result.object.kind == 8 &&
+        result.object.instance != 4194303 &&
+        access.properties.all(p => p.0 == 75U)
+      )
+    if !resolved || result.results.length() != access.properties.length() {
       raise Invalid("RPM acknowledgement object or result count differs", i)
     }
     for j, property in access.properties {

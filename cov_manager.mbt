@@ -3,6 +3,7 @@ priv struct Subscription {
   peer : String
   process : UInt32
   object : ObjectId
+  mut confirmed : Bool
   mut expires : UInt64?
   mut baseline : Array[Tag]?
 }
@@ -67,9 +68,6 @@ pub fn CovManager::subscribe(
   ignore(self.device.point_domain(object))
   ignore(object.find(85U))
   ignore(self.device.cov_values(request.object))
-  if request.confirmed == Some(true) {
-    raise Property(5U, 45U)
-  }
   let mut found = -1
   for i = 0; i < self.subscriptions.length(); i = i + 1 {
     let s = self.subscriptions[i]
@@ -92,6 +90,7 @@ pub fn CovManager::subscribe(
   }
   let expires = if lifetime == 0UL { None } else { Some(now + lifetime) }
   if found >= 0 {
+    self.subscriptions[found].confirmed = request.confirmed.unwrap()
     self.subscriptions[found].expires = expires
     self.subscriptions[found].baseline = None
   } else {
@@ -102,6 +101,7 @@ pub fn CovManager::subscribe(
       peer,
       process: request.process,
       object: request.object,
+      confirmed: request.confirmed.unwrap(),
       expires,
       baseline: None,
     })
@@ -169,11 +169,24 @@ pub fn CovManager::poll(
   self : CovManager,
   now : UInt64,
 ) -> Array[CovEnvelope] raise BacnetError {
+  self.poll_mode(now, false)
+}
+
+///|
+fn CovManager::poll_mode(
+  self : CovManager,
+  now : UInt64,
+  confirmed : Bool,
+  commit~ : Bool = true,
+) -> Array[CovEnvelope] raise BacnetError {
   self.advance(now)
   let output : Array[CovEnvelope] = []
   let updates : Array[(Subscription, Array[Tag])] = []
   let mut bytes = 0
   for subscription in self.subscriptions {
+    if subscription.confirmed != confirmed {
+      continue
+    }
     let current = self.device.cov_values(subscription.object)
     let changed = match subscription.baseline {
       None => true
@@ -209,8 +222,10 @@ pub fn CovManager::poll(
     output.push({ peer: subscription.peer, notification, })
     updates.push((subscription, clone_tags(current, self.device.limits)))
   }
-  for (subscription, snapshot) in updates {
-    subscription.baseline = Some(snapshot)
+  if commit {
+    for (subscription, snapshot) in updates {
+      subscription.baseline = Some(snapshot)
+    }
   }
   output
 }

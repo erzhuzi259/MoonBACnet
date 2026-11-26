@@ -1,0 +1,5 @@
+import {
+  "erzhuzi259/moonbacnet" @bac,
+}
+
+pkgtype(kind: "executable")

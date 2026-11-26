@@ -82,15 +82,15 @@ fn main raise {
 | 应用值 | null/bool/uint32/int32/REAL/DOUBLE/octet/string/bits/enum/date/time/object-id，精确位模式，嵌套context | 字符串仅encoding0 UTF-8；日期使用1900年偏移和协议通配字节，不提供日历运算 |
 | 标签 | 扩展tag、8/16/32位长度、opening/closing、严格截断/计数/深度检查 | 未知application tag明确拒绝；编码规范化整数宽度，不保留原输入的非最短形式 |
 | 网络报文 | IPv4 BVLC 原始单播/广播、forwarded、distribute、result、foreign-register；NPDU路由字段 | 只编解码相关包；没有BBMD表、外来设备注册管理、路由器、MS/TP、IPv6或BACnet/SC |
-| APDU | 未分段confirmed/unconfirmed、simple/complex ACK、error/reject/abort | 分段及SegmentACK明确拒绝；设备宿主最多1476字节APDU，按请求方最大长度返回有界abort |
-| 服务 | Who-Is/I-Am、ReadProperty、WriteProperty、ReadPropertyMultiple、SubscribeCOV、unconfirmed COV notification | RPM支持all(8)展开，required/optional宏未实现；不支持WritePropertyMultiple等其他服务 |
+| APDU | 未分段confirmed/unconfirmed、simple/complex ACK、error/reject/abort | 分段请求返回标准 Abort，分段重组和 SegmentACK 待扩展；设备宿主最多1476字节APDU，按请求方最大长度返回有界abort |
+| 服务 | Who-Is/I-Am、Who-Has/I-Have、ReadProperty、WriteProperty、ReadPropertyMultiple、SubscribeCOV、两种 COV notification | RPM 支持 ALL／REQUIRED／OPTIONAL 展开；新增服务与最终符合性范围见下文标准交互说明 |
 | 属性库 | 对象ID/名称唯一、Object_List/Property_List、数组索引、标量及只读自定义数组、类型与预算检查 | 索引0为数组长度，None为整体；远端数组及compound写入未实现；对象集合不经网络创建 |
-| 测点 | analog/binary/multi-state input/output/value，类型域、Status_Flags、Out_Of_Service | 为明确子集对象模型，未实现标准对象的所有必备属性/行为；不是完整可认证设备profile |
-| 控制 |16级在途命令槽、默认priority16、Null释放、relinquish default、域检查 | priority6保留，网络写入拒绝；未实现输出最小开/关时间及优先级6内部计时；默认值由宿主API设置 |
-| COV | 初始快照、累计模拟量阈值、二进制/状态变化、续期/取消/过期、原子poll | 只接受unconfirmed通知订阅；0 lifetime代表不定期，取消为两个可选字段均缺失；无通知持久重发 |
+| 测点 | analog/binary/multi-state input/output/value，类型域、Status_Flags、Out_Of_Service | 为明确子集对象模型，当前补入必需属性与状态路径；完整条款验收见标准交互说明 |
+| 控制 |16级在途命令槽、默认priority16、Null释放、relinquish default、域检查 | priority6保留，网络写入拒绝；输出最小开/关时间待验收；默认值可由宿主和 WriteProperty 设置 |
+| COV | 初始快照、累计模拟量阈值、二进制/状态变化、续期/取消/过期、原子poll | 两种确认模式均支持；0 lifetime代表不定期，取消为两个可选字段均缺失；确认型通知由宿主驱动有界重传 |
 | 事务 | 按peer关联invoke/service/reference、轮转ID、超时/定次重试/取消 | 无网络socket；重复写入的业务幂等性仍由宿主决定；Client 关联服务，显式属性请求可另用 `correlate_read_batches` 校验结果 |
 
-通用 Tag/服务codec能表示设备profile之外的数据。`Device.add_point` 检查标准测点kind与值域；输出对象必须启用命令优先级，输入对象不得设为commandable。网络权限由注册时的 writable 及 commandable 属性决定。`Device.update` 是可信宿主入口，维护四位状态标志与 Out_Of_Service 一致性；不实现输入点脱机模式下的网络写入扩展。
+通用 Tag/服务codec能表示设备profile之外的数据。`Device.add_point` 检查标准测点kind与值域；输出对象必须启用命令优先级，输入对象不得设为commandable。网络写入按对象类型、属性权限、命令能力和 Out_Of_Service 状态校验。`Device.update` 为宿主提供测点更新入口，并维护 Status_Flags 与 Out_Of_Service 的一致性。
 
 ReadPropertyACK、RPM及COV的constructed value可为空，以表示真实空数组；这与必需字段缺失不同。存储与返回值均建立快照，调用者修改数组不会改写已保存的属性或COV基线。
 
@@ -124,7 +124,7 @@ CLI支持 tags、apdu、bvlc、npdu、rp、rp-ack、wp、rpm、rpm-ack、cov-sub
 
 固定BACpypes3 **0.0.110**，已验证23组类型和13组服务/报文向量双向编码，以及11次真实Python实现对持续MoonBit宿主的请求：发现、优先级写入/读取/释放、RPM、错误、订阅/取消。以上向量与持续宿主对照使用stdio；十一月另增加 `scripts/udp_interop.py`，通过真实回环UDP验证发现、优先级、错误、畸形报文恢复和COV通知/取消。未连接外部厂商设备，不构成BTL认证、完整标准符合性或厂商兼容认证。
 
-本地严格检查、构建、四后端各 64 项测试、格式和接口快照已通过。[Linux/Windows CI](https://github.com/erzhuzi259/MoonBACnet/actions) 覆盖上述流程、六个示例、独立stdio/UDP oracle、打包与历史/ZIP内容检查；工程检查不等于正式赛事验收。申报书及审查/AI/汇总材料可放在项目本地文件夹，经忽略及历史/包检查排除，不进入 Git 或发行包。来源与AI辅助范围见 [THIRD_PARTY.md](THIRD_PARTY.md)，主要公共API快照见 `pkg.generated.mbti`。
+0.2.0 发布基线通过四后端各 64 项测试、格式和接口检查。当前源码的标准语义增量通过四后端各 79 项测试。[Linux/Windows CI](https://github.com/erzhuzi259/MoonBACnet/actions) 覆盖上述流程、六个示例、独立stdio/UDP oracle、打包与历史/ZIP内容检查；工程检查不等于正式赛事验收。申报书及审查/AI/汇总材料可放在项目本地文件夹，经忽略及历史/包检查排除，不进入 Git 或发行包。来源与AI辅助范围见 [THIRD_PARTY.md](THIRD_PARTY.md)，主要公共API快照见 `pkg.generated.mbti`。
 
 规范与参考：[BACnet委员会](https://bacnet.org/about-bacnet/)、[BACpypes3文档](https://bacpypes3.readthedocs.io/en/latest/)、[BACpypes3源码](https://github.com/JoelBender/BACpypes3)、[固定版本元数据](https://pypi.org/project/bacpypes3/0.0.110/)。
 
@@ -142,4 +142,10 @@ CLI支持 tags、apdu、bvlc、npdu、rp、rp-ack、wp、rpm、rpm-ack、cov-sub
 
 运行 `moon run examples/expansion --target native --deny-warn`，可复现 50 字节 APDU 下的多批请求、19 个属性结果、优先级数组索引、未知对象错误和等待回复时和完成后的期限。Windows 可使用上文包装脚本。
 
-四个后端各通过 64 项回归，六个业务和规模示例均通过。BACpypes3 0.0.110 对照覆盖 23 组应用值、13 组服务和报文向量、11 次持续 stdio 请求，以及回环 UDP 的发现、优先级读写与释放、畸形报文恢复和 COV 通知／取消。
+0.2.0 发布验收中，四个后端各通过 64 项回归，六个业务和规模示例均通过。BACpypes3 0.0.110 对照覆盖 23 组应用值、13 组服务和报文向量、11 次持续 stdio 请求，以及回环 UDP 的发现、优先级读写与释放、畸形报文恢复和 COV 通知／取消。
+
+## 标准语义与源码增量
+
+目标标准为 ANSI/ASHRAE 135-2020，Protocol Revision 22。当前源码补入 Device／普通 IPv4 Network Port 构建、Who-Has／I-Have、设备通配实例读取、RPM 的 REQUIRED／OPTIONAL 选择器、输入点脱机写入，以及确认型 COV 的通知、ACK、重传与取消。通过正常 `Server`／`Client` 报文路径调用。
+
+运行 `moon run examples/standard_exchange --target native --deny-warn`，可查看标准请求与实际响应。完整字段、能力位、资源限制、兼容目标及待验收条目见 [标准范围与交互案例](docs/STANDARD_COMPATIBILITY.md)。该增量位于本地开发源码，0.2.0 的发布证据见上文。

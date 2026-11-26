@@ -8,16 +8,17 @@ import threading
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "_local/oracle"))
 from bacpypes3.apdu import (APDU, APCISequence, ConfirmedRequestPDU, ReadPropertyRequest,
-                           WritePropertyRequest, WhoIsRequest, SubscribeCOVRequest)
+                           WritePropertyRequest, WhoIsRequest, SubscribeCOVRequest, WhoHasRequest, SimpleAckPDU)
 from bacpypes3.pdu import PDU
 from bacpypes3.npdu import NPDU
 from bacpypes3.ipv4.bvll import OriginalUnicastNPDU, LPDU
 from bacpypes3.primitivedata import Real, Null
+from bacpypes3.basetypes import WhoHasObject
 
 
 def main():
     exe = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "_build/native/debug/build/cmd/udp/udp.exe"
-    process = subprocess.Popen([str(exe.resolve()), "0", "12"], stdout=subprocess.PIPE,
+    process = subprocess.Popen([str(exe.resolve()), "0", "20"], stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, text=True)
     watchdog = threading.Timer(20, process.kill)
     watchdog.start()
@@ -89,6 +90,38 @@ def main():
         assert exchange(SubscribeCOVRequest(subscriberProcessIdentifier=7,
             monitoredObjectIdentifier=("analogValue", 1))).apduType == 2
         assert notifications, "COV initial/changed notifications missing over UDP"
+        assert exchange(SubscribeCOVRequest(subscriberProcessIdentifier=8,
+            monitoredObjectIdentifier=("analogValue",1),issueConfirmedNotifications=True,
+            lifetime=30)).apduType == 2
+        sock.settimeout(5)
+        original, peer = sock.recvfrom(65536)
+        initial = decode(original)
+        assert peer == address and initial.apduType == 0 and initial.apduService == 1
+        assert initial.subscriberProcessIdentifier == 8
+        repeated, peer = sock.recvfrom(65536)
+        assert peer == address and repeated == original, "COV retry must retain invoke and payload"
+        def acknowledge(notification):
+            ack = SimpleAckPDU(1, notification.apduInvokeID)
+            network = NPDU(bytes(ack.encode().pduData))
+            sock.sendto(bytes(OriginalUnicastNPDU(bytes(network.encode().pduData)).encode().pduData),address)
+        acknowledge(initial)
+        assert write(Real(22),12).apduType == 2
+        changed, peer = sock.recvfrom(65536)
+        notification = decode(changed)
+        assert peer == address and notification.apduType == 0
+        assert notification.apduInvokeID != initial.apduInvokeID
+        acknowledge(notification)
+        assert exchange(SubscribeCOVRequest(subscriberProcessIdentifier=8,
+            monitoredObjectIdentifier=("analogValue",1))).apduType == 2
+        found = exchange(WhoHasRequest(object=WhoHasObject(objectName="setpoint")))
+        assert found.objectIdentifier[1] == 1
+        network = NPDU(bytes.fromhex("0c057700010c"))
+        network.pduExpectingReply = True
+        sock.sendto(bytes(OriginalUnicastNPDU(bytes(network.encode().pduData)).encode().pduData),address)
+        aborted, peer = sock.recvfrom(65536)
+        abort = decode(aborted)
+        assert peer == address and abort.apduType == 7 and abort.apduInvokeID == 0x77 and int(abort.apduAbortRejectReason) == 4
+        assert int(exchange(WhoIsRequest()).iAmDeviceIdentifier[1]) == 42
         assert process.wait(timeout=5) == 0, process.stderr.read()
     finally:
         sock.close()
@@ -96,7 +129,7 @@ def main():
         if process.poll() is None:
             process.kill()
             process.wait(timeout=5)
-    print("PASS: loopback UDP discovery, priority arbitration/release, read errors, malformed-input recovery and COV notifications/cancel")
+    print("PASS: 20 loopback UDP inputs, discovery, priority release, property errors, both COV modes, exact confirmed retry/ACK, cancellation and segmentation Abort/recovery")
 
 
 if __name__ == "__main__":

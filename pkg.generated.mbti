@@ -24,6 +24,8 @@ pub fn decode_error(Bytes) -> (UInt32, UInt32) raise BacnetError
 
 pub fn decode_i_am(Bytes, limits? : Limits) -> IAm raise BacnetError
 
+pub fn decode_i_have(Bytes, limits? : Limits) -> IHave raise BacnetError
+
 pub fn decode_multiple_ack(Bytes, limits? : Limits) -> Array[ReadAccessResult] raise BacnetError
 
 pub fn decode_npdu(Bytes, limits? : Limits) -> Npdu raise BacnetError
@@ -37,6 +39,8 @@ pub fn decode_read_property(Bytes, limits? : Limits) -> PropertyRef raise Bacnet
 pub fn decode_subscribe_cov(Bytes, limits? : Limits) -> SubscribeCov raise BacnetError
 
 pub fn decode_tags(Bytes, limits? : Limits) -> Array[Tag] raise BacnetError
+
+pub fn decode_who_has(Bytes, limits? : Limits) -> WhoHas raise BacnetError
 
 pub fn decode_who_is(Bytes, limits? : Limits) -> WhoIs raise BacnetError
 
@@ -56,6 +60,8 @@ pub fn encode_error(UInt32, UInt32) -> Bytes raise BacnetError
 
 pub fn encode_i_am(IAm, limits? : Limits) -> Bytes raise BacnetError
 
+pub fn encode_i_have(IHave, limits? : Limits) -> Bytes raise BacnetError
+
 pub fn encode_multiple_ack(Array[ReadAccessResult], limits? : Limits) -> Bytes raise BacnetError
 
 pub fn encode_npdu(Npdu, limits? : Limits) -> Bytes raise BacnetError
@@ -69,6 +75,8 @@ pub fn encode_read_property(PropertyRef, limits? : Limits) -> Bytes raise Bacnet
 pub fn encode_subscribe_cov(SubscribeCov, limits? : Limits) -> Bytes raise BacnetError
 
 pub fn encode_tags(Array[Tag], limits? : Limits) -> Bytes raise BacnetError
+
+pub fn encode_who_has(WhoHas, limits? : Limits) -> Bytes raise BacnetError
 
 pub fn encode_who_is(WhoIs, limits? : Limits) -> Bytes raise BacnetError
 
@@ -218,6 +226,7 @@ pub fn Device::command_snapshot(Self, ObjectId) -> CommandSnapshot raise BacnetE
 pub fn Device::define_property(Self, ObjectId, UInt32, Array[Tag], writable? : Bool, array? : Bool) -> Unit raise BacnetError
 pub fn Device::identifier(Self) -> ObjectId
 pub fn Device::new(Int32, String, UInt32, limits? : Limits) -> Self raise BacnetError
+pub fn Device::new_standard(Int32, String, UInt32, Ipv4PortConfig, limits? : Limits) -> Self raise BacnetError
 pub fn Device::property_ids(Self, ObjectId) -> Array[UInt32] raise BacnetError
 pub fn Device::read(Self, PropertyRef) -> Array[Tag] raise BacnetError
 pub fn Device::resource_limits(Self) -> Limits
@@ -256,6 +265,25 @@ pub(all) struct IAm {
   vendor : UInt32
 }
 pub fn IAm::to_repr(Self) -> @debug.Repr
+
+#derive(@debug.Debug)
+pub(all) struct IHave {
+  device : ObjectId
+  object : ObjectId
+  name : String
+}
+pub fn IHave::to_repr(Self) -> @debug.Repr
+
+#derive(@debug.Debug)
+pub(all) struct Ipv4PortConfig {
+  instance : Int32
+  name : String
+  address : Bytes
+  subnet_mask : Bytes
+  gateway : Bytes
+  udp_port : UInt32
+}
+pub fn Ipv4PortConfig::to_repr(Self) -> @debug.Repr
 
 #derive(Eq, @debug.Debug)
 pub(all) struct Limits {
@@ -303,6 +331,15 @@ pub fn ObjectId::op_gt(Self, Self) -> Bool
 pub fn ObjectId::op_le(Self, Self) -> Bool
 pub fn ObjectId::op_lt(Self, Self) -> Bool
 pub fn ObjectId::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub(all) enum ObjectQuery {
+  Identifier(ObjectId)
+  Name(String)
+}
+pub fn ObjectQuery::equal(Self, Self) -> Bool
+pub fn ObjectQuery::not_equal(Self, Self) -> Bool
+pub fn ObjectQuery::to_repr(Self) -> @debug.Repr
 
 pub struct PriorityArray {
   // private fields
@@ -380,11 +417,14 @@ pub fn Route::to_repr(Self) -> @debug.Repr
 pub struct Server {
   // private fields
 }
+pub fn Server::confirmed_notifications(Self, UInt64) -> Array[Transmission] raise BacnetError
 pub fn Server::datagram(Self, Bytes, String, UInt64) -> Bytes? raise BacnetError
 pub fn Server::device(Self) -> Device
 pub fn Server::handle(Self, Apdu, String, UInt64) -> Apdu? raise BacnetError
 pub fn Server::new(Device) -> Self
+pub fn Server::notification_deadline(Self) -> UInt64?
 pub fn Server::notifications(Self, UInt64) -> Array[CovEnvelope] raise BacnetError
+pub fn Server::take_notifications(Self) -> Array[CovEnvelope]
 
 #derive(@debug.Debug)
 pub(all) struct SubscribeCov {
@@ -439,6 +479,13 @@ pub(all) enum Value {
   Object(ObjectId)
 }
 pub fn Value::to_repr(Self) -> @debug.Repr
+
+#derive(@debug.Debug)
+pub(all) struct WhoHas {
+  range : WhoIs
+  object : ObjectQuery
+}
+pub fn WhoHas::to_repr(Self) -> @debug.Repr
 
 #derive(@debug.Debug)
 pub(all) struct WhoIs {

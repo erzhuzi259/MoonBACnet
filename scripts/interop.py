@@ -15,9 +15,9 @@ from bacpypes3.apdu import (
     APDU, APCISequence, ConfirmedRequestPDU, ComplexAckPDU,
     ReadPropertyRequest, ReadPropertyACK, WritePropertyRequest,
     ReadPropertyMultipleRequest, SubscribeCOVRequest,
-    UnconfirmedCOVNotificationRequest, WhoIsRequest, IAmRequest,
+    UnconfirmedCOVNotificationRequest, WhoIsRequest, IAmRequest, WhoHasRequest, IHaveRequest,
 )
-from bacpypes3.basetypes import ReadAccessSpecification, PropertyReference, PropertyValue
+from bacpypes3.basetypes import ReadAccessSpecification, PropertyReference, PropertyValue, WhoHasObject, ServicesSupported, ObjectTypesSupported
 from bacpypes3.constructeddata import ArrayOf
 from bacpypes3.primitivedata import (
     Null, Boolean, Unsigned, Integer, Real, Double, OctetString,
@@ -70,6 +70,9 @@ for value in primitives:
 queries = [
     ("whois",WhoIsRequest()),
     ("whois",WhoIsRequest(deviceInstanceRangeLowLimit=1,deviceInstanceRangeHighLimit=100)),
+    ("whohas",WhoHasRequest(object=WhoHasObject(objectName="setpoint"))),
+    ("whohas",WhoHasRequest(object=WhoHasObject(objectIdentifier=("analogValue",1)))),
+    ("ihave",IHaveRequest(deviceIdentifier=("device",42),objectIdentifier=("analogValue",1),objectName="setpoint")),
     ("iam",IAmRequest(iAmDeviceIdentifier=("device",42),maxAPDULengthAccepted=1476,segmentationSupported="noSegmentation",vendorID=999)),
     ("rp",ReadPropertyRequest(objectIdentifier=("analogInput",1),propertyIdentifier="presentValue")),
     ("rp",ReadPropertyRequest(objectIdentifier=("device",42),propertyIdentifier="objectList",propertyArrayIndex=0)),
@@ -133,12 +136,52 @@ try:
     assert read() == 24.0  # lower priority remains masked
     assert exchange(WritePropertyRequest(objectIdentifier=("analogValue",1),propertyIdentifier="presentValue",propertyValue=Null(()),priority=8)).apduType == 2
     assert read() == 25.0
-    rpm = exchange(queries[8][1])
+    rpm = exchange(next(q for mode,q in queries if mode == 'rpm'))
     assert len(rpm.listOfReadAccessResults[0].listOfResults) == 2
     missing = exchange(ReadPropertyRequest(objectIdentifier=("analogInput",1),propertyIdentifier=9999))
     assert int(missing.errorClass) == 2 and int(missing.errorCode) == 32
-    assert exchange(queries[9][1]).apduType == 2
-    assert exchange(queries[10][1]).apduType == 2
+    subs = [q for mode,q in queries if mode == 'cov-sub']
+    assert exchange(subs[0]).apduType == 2
+    assert exchange(subs[1]).apduType == 2
+    found = exchange(WhoHasRequest(object=WhoHasObject(objectName="setpoint")))
+    assert found.deviceIdentifier == ObjectIdentifier(("device",42))
+    assert found.objectIdentifier == ObjectIdentifier(("analogValue",1))
+    found = exchange(WhoHasRequest(object=WhoHasObject(objectIdentifier=("analogInput",1))))
+    assert str(found.objectName) == "temperature"
+    wildcard = exchange(ReadPropertyRequest(objectIdentifier=("device",4194303),propertyIdentifier="objectIdentifier"))
+    assert wildcard.objectIdentifier == ObjectIdentifier(("device",42))
+    assert wildcard.propertyValue.cast_out(ObjectIdentifier) == ObjectIdentifier(("device",42))
+    for name,kind,expected in [
+        ("protocolVersion",Unsigned,1),("protocolRevision",Unsigned,22),
+        ("protocolServicesSupported",ServicesSupported,None),
+        ("protocolObjectTypesSupported",ObjectTypesSupported,None),
+    ]:
+        result = exchange(ReadPropertyRequest(objectIdentifier=("device",42),propertyIdentifier=name))
+        value = result.propertyValue.cast_out(kind)
+        if expected is not None:
+            assert int(value) == expected
+        elif name == "protocolServicesSupported":
+            assert value[33] == 1 and value[34] == 1 and value[26] == 0
+        else:
+            assert value[56] == 1 and value[8] == 1 and value[0] == 1
+    for name,kind,expected in [("networkType",Enumerated,5),("bacnetIPUDPPort",Unsigned,47808)]:
+        result = exchange(ReadPropertyRequest(objectIdentifier=("networkPort",1),propertyIdentifier=name))
+        assert int(result.propertyValue.cast_out(kind)) == expected
+    for selector in ["all","required","optional"]:
+        result = exchange(ReadPropertyMultipleRequest(listOfReadAccessSpecs=[
+            ReadAccessSpecification(objectIdentifier=("analogInput",1),listOfPropertyReferences=[PropertyReference(selector)])
+        ]))
+        assert result.apduType == 3
+        ids = [int(entry.propertyIdentifier) for entry in result.listOfReadAccessResults[0].listOfResults]
+        assert (85 in ids) == (selector != "optional")
+    input_write = WritePropertyRequest(objectIdentifier=("analogInput",1),propertyIdentifier="presentValue",propertyValue=Real(11))
+    assert exchange(input_write).apduType == 5
+    assert exchange(WritePropertyRequest(objectIdentifier=("analogInput",1),propertyIdentifier="outOfService",propertyValue=Boolean(True))).apduType == 2
+    assert exchange(input_write).apduType == 2
+    pv = exchange(ReadPropertyRequest(objectIdentifier=("analogInput",1),propertyIdentifier="presentValue"))
+    assert float(pv.propertyValue.cast_out(Real)) == 11.0
+    status = exchange(ReadPropertyRequest(objectIdentifier=("analogInput",1),propertyIdentifier="statusFlags"))
+    assert status.propertyValue.cast_out(BitString)[3] == 1
     process.stdin.close()
     assert process.wait(timeout=10) == 0, process.stderr.read()
 finally:

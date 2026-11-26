@@ -11,7 +11,16 @@ async fn main {
   if port < 0 || port > 65535 || maximum <= 0 || maximum > 10000 {
     raise Failure("invalid port or datagram budget")
   }
-  let device = @bac.Device::new(42, "loopback-controller", 999U)
+  let socket = @socket.UdpServer(@socket.Addr::new(0x7f000001U, port))
+  defer socket.close()
+  let device = @bac.Device::new_standard(42, "loopback-controller", 999U, {
+    instance: 1,
+    name: "loopback-ipv4",
+    address: b"\x7f\x00\x00\x01",
+    subnet_mask: b"\xff\x00\x00\x00",
+    gateway: b"\x00\x00\x00\x00",
+    udp_port: socket.addr.port().reinterpret_as_uint(),
+  })
   device.add_point(
     @bac.ObjectId::new(2, 1),
     "setpoint",
@@ -20,8 +29,6 @@ async fn main {
     commandable=true,
   )
   let server = @bac.Server::new(device)
-  let socket = @socket.UdpServer(@socket.Addr::new(0x7f000001U, port))
-  defer socket.close()
   @stdio.stdout.write(
     @utf8.encode("READY " + socket.addr.port().to_string() + "\n"),
   )
@@ -49,6 +56,11 @@ async fn main {
           if reply is Some(bytes) {
             socket.sendto(bytes, peer)
           }
+        }
+      }
+      for tx in server.confirmed_notifications(clock) {
+        if peers.get(tx.peer) is Some(peer) {
+          socket.sendto(tx.bytes, peer)
         }
       }
       for envelope in server.notifications(clock) {

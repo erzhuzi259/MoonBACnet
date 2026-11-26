@@ -62,6 +62,7 @@ jobs:
           moon run examples/scale --target native --release --deny-warn
           moon run examples/november --target native --deny-warn
           moon run examples/expansion --target native --deny-warn
+          moon run examples/standard_exchange --target native --deny-warn
       - name: Independent BACpypes3 codecs and persistent device
         run: |
           python -m pip install --target _local/oracle -r scripts/requirements-interop.txt

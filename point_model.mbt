@@ -30,11 +30,16 @@ pub fn Device::add_point(
     limits: self.limits,
     objects: [],
     stored_bytes: 0,
+    database_revision: 0U,
   }
   temp.add_object(id, name)
   temp.define_property(id, 85U, [Application(initial)], writable=commandable)
   temp.define_property(id, 111U, [Application(Bits(4, b"\x00"))])
-  temp.define_property(id, 81U, [Application(Boolean(false))])
+  temp.define_property(id, 81U, [Application(Boolean(false))], writable=true)
+  temp.define_property(id, 36U, [Application(Enumerated(0U))])
+  if id.kind == 3 || id.kind == 4 {
+    temp.define_property(id, 84U, [Application(Enumerated(0U))])
+  }
   match domain {
     Analog => {
       temp.define_property(id, 117U, [Application(Enumerated(units))])
@@ -45,7 +50,7 @@ pub fn Device::add_point(
     Binary => ()
   }
   if commandable {
-    if temp.objects[0].properties.length() + 3 > self.limits.max_properties {
+    if temp.objects[0].properties.length() + 4 > self.limits.max_properties {
       raise Limit("command property count")
     }
     temp.objects[0].command = Some(PriorityArray::new(domain, initial))
@@ -191,6 +196,43 @@ pub fn Device::write(
   }
   if request.priority is Some(_) {
     raise Property(2U, 40U)
+  }
+  if request.reference.property == 104U {
+    self.set_relinquish_default(object.id, value)
+    return
+  }
+  if request.reference.property == 77U {
+    let name = match value {
+      Text(name) if !name.is_empty() => name
+      _ => raise Property(2U, 37U)
+    }
+    for other in self.objects {
+      if other.id != object.id &&
+        other.find(77U).values is [Application(Text(existing))] &&
+        existing == name {
+        raise Property(2U, 48U)
+      }
+    }
+    self.replace_scalar(object.find(77U), Text(name))
+    self.database_revision += 1U
+    return
+  }
+  if request.reference.property == 81U && object.id.kind != 56 {
+    self.update(object.id, 81U, value)
+    return
+  }
+  if request.reference.property == 85U &&
+    (object.id.kind == 0 || object.id.kind == 3 || object.id.kind == 13) {
+    if object.find(81U).values is [Application(Boolean(true))] {
+      self.update(object.id, 85U, value)
+      return
+    }
+    raise Property(2U, 40U)
+  }
+  if request.reference.property == 85U &&
+    (object.id.kind == 2 || object.id.kind == 5 || object.id.kind == 19) {
+    self.update(object.id, 85U, value)
+    return
   }
   let property = object.find(request.reference.property)
   if !property.writable {

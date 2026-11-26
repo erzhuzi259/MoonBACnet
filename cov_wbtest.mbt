@@ -46,7 +46,9 @@ test "COV expiry cancellation perpetual and peer process object subscription ide
   cov.subscribe("b", { ..sub, confirmed: None, lifetime: None, }, 4UL)
   assert_eq(cov.count(4UL), 0)
   cov.subscribe("unknown", { ..sub, confirmed: None, lifetime: None, }, 4UL)
-  expect_error(() => cov.subscribe("a", { ..sub, confirmed: Some(true), }, 4UL))
+  cov.subscribe("a", { ..sub, confirmed: Some(true), }, 4UL)
+  assert_eq(cov.poll(4UL).length(), 0)
+  assert_eq(cov.poll_mode(4UL, true).length(), 1)
   expect_error(() => cov.subscribe("a", { ..sub, object: d.identifier(), }, 4UL))
 }
 

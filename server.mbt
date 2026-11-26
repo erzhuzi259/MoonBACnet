@@ -5,11 +5,23 @@ pub struct Server {
   priv cache : Array[CachedReply]
   priv mut now : UInt64
   priv mut cache_bytes : Int32
+  priv mut cov_client : Client?
+  priv cov_pending : Array[CovPending]
+  priv received_notifications : Array[CovEnvelope]
 }
 
 ///|
 pub fn Server::new(device : Device) -> Server {
-  { device, cov: CovManager::new(device), cache: [], now: 0UL, cache_bytes: 0, }
+  {
+    device,
+    cov: CovManager::new(device),
+    cache: [],
+    now: 0UL,
+    cache_bytes: 0,
+    cov_client: None,
+    cov_pending: [],
+    received_notifications: [],
+  }
 }
 
 ///|
@@ -36,25 +48,36 @@ fn Device::read_access(
   let mut retained = 0
   for entry in access {
     let results : Array[ReadResult] = []
+    let resolved = if entry.object.kind == 8 &&
+      entry.object.instance == 4194303 &&
+      entry.properties.any(p => p.0 == 75U) {
+      self.id
+    } else {
+      entry.object
+    }
     for (property, index) in entry.properties {
-      let properties = if property == 8U && index == None {
-        self.all_property_ids(entry.object) catch {
+      let properties = if (
+          property == 8U || property == 105U || property == 80U
+        ) &&
+        index == None {
+        self.select_properties(resolved, property) catch {
           Property(_, _) => [property]
           error => raise error
         }
       } else {
         [property]
       }
+      let properties = if properties.is_empty() {
+        [property]
+      } else {
+        properties
+      }
       for p in properties {
         if total >= self.limits.max_nodes {
           raise Limit("expanded read access results")
         }
         total += 1
-        let reference : PropertyRef = {
-          object: entry.object,
-          property: p,
-          index,
-        }
+        let reference : PropertyRef = { object: resolved, property: p, index, }
         let result = PropertyData(reference, self.read(reference)) catch {
           Property(class, code) => PropertyFailure(reference, class, code)
           error => raise error
@@ -71,7 +94,7 @@ fn Device::read_access(
         results.push(result)
       }
     }
-    output.push({ object: entry.object, results, })
+    output.push({ object: resolved, results, })
   }
   output
 }
@@ -84,11 +107,19 @@ fn Server::confirmed(
   now : UInt64,
 ) -> Apdu raise BacnetError {
   match request.service {
+    1 => {
+      self.receive_notification(
+        peer,
+        decode_cov(request.body, limits=self.device.limits),
+      )
+      SimpleAck(request.invoke, 1)
+    }
     12 => {
       let reference = decode_read_property(
         request.body,
         limits=self.device.limits,
       )
+      let reference = self.device.read_reference(reference)
       let value = self.device.read(reference)
       ComplexAck(
         request.invoke,
@@ -135,6 +166,20 @@ pub fn Server::handle(
     raise Limit("device receive APDU maximum")
   }
   match apdu {
+    SimpleAck(_, _) | ErrorPdu(_, _, _) | Reject(_, _) | Abort(_, _, _) => {
+      if self.cov_client is Some(client) {
+        ignore(client.receive(peer, apdu, now))
+        self.cleanup_cov(now)
+      }
+      None
+    }
+    Unconfirmed(2, body) => {
+      self.receive_notification(
+        peer,
+        decode_cov(body, limits=self.device.limits),
+      )
+      None
+    }
     Confirmed(request) => {
       if peer.is_empty() {
         raise Invalid("empty request peer", 0)
@@ -195,6 +240,15 @@ pub fn Server::handle(
       self.cache_bytes += cost
       Some(decode_apdu(response_wire, limits=self.device.limits))
     }
+    Unconfirmed(7, body) =>
+      match
+        self.device.discover_object(
+          decode_who_has(body, limits=self.device.limits),
+        ) {
+        Some(value) =>
+          Some(Unconfirmed(1, encode_i_have(value, limits=self.device.limits)))
+        None => None
+      }
     Unconfirmed(8, body) => {
       let range = decode_who_is(body, limits=self.device.limits)
       let instance = self.device.id.instance
@@ -235,6 +289,24 @@ pub fn Server::datagram(
   }
   if npdu.payload.length() > 1476 {
     raise Limit("device receive APDU maximum")
+  }
+  if !broadcast &&
+    npdu.expecting_reply &&
+    npdu.payload.length() >= 6 &&
+    (npdu.payload[0].to_int() & 0xf9) == 8 {
+    ignore(max_apdu_size(npdu.payload[1].to_int() & 15))
+    if npdu.payload[1].to_int() >> 4 > 7 ||
+      npdu.payload[4].to_int() == 0 ||
+      npdu.payload[4].to_int() > 127 {
+      raise Invalid("segmented request header", 0)
+    }
+    self.clock(now)
+    return Some(
+      encode_datagram(
+        Abort(npdu.payload[2].to_int(), true, 4),
+        limits=self.device.limits,
+      ),
+    )
   }
   let apdu = decode_apdu(npdu.payload, limits=self.device.limits)
   if broadcast && apdu is Confirmed(_) {
